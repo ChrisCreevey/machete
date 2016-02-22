@@ -104,7 +104,7 @@ int main (int argc, char *argv[])
 
 
     /* carry out randomisation test to identify mean of random trees */
- /*   printf("Carrying out random trees analysis\n");
+    printf("Carrying out random trees analysis\n");
     send_command("randtrees;\n");
     checkcount =0; while(!check_for_output("mean=")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
 
@@ -112,8 +112,8 @@ int main (int argc, char *argv[])
     token = strtok(NULL, " =");
 
     meanRand_likelihood=atof(token);
-    printf( "\n\nMean -ln L of random trees: %g\n", meanRand_likelihood );
-*/
+    printf( "\n\tMean -ln L of random trees: %g\n", meanRand_likelihood );
+
 /*
     printf("%s\n", newtree);
     
@@ -895,7 +895,7 @@ int test_reverse_constraints(char * translated_tree)
 
 
           printf("\tBest reverse Constraint -ln L = %g\tdifference = %g\n", new_likelihood, new_likelihood-likelihood);
-          sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/alignment_length);
+          sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood));
 
           /* find the end of this split in the named tree string to append the weight as a label */
 
