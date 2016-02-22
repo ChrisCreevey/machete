@@ -38,11 +38,11 @@ double re_estimate_constraint_parameters (double likelihood, int constraint_num)
 
 FILE *paup_pipe, *logfile, *treefile, *outputtree;
 
-int bytes_read, pid,  file_length=0, checks=0;
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE;
+int bytes_read, pid,  file_length=0, checks=0, checkcount=0;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0;
 char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
-double likelihood =0, new_likelihood=0;
+double likelihood =0, new_likelihood=0, meanRand_likelihood=0;
 
 
 
@@ -74,10 +74,17 @@ int main (int argc, char *argv[])
   if(setup_pipe () == TRUE)
     {
 
-    printf("\nExecuting file %s\n\n", argv[1]);
+    printf("\nExecuting file %s\n", argv[1]);
     sprintf(command, "execute %s;\n", argv[1]);
     send_command (command);
-  
+    checkcount =0; while(!check_for_output("Data matrix has")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
+    token = strtok(output, " ");
+    for(i=0; i<3; i++) token = strtok(NULL, " ");
+    number_taxa = atoi(token);
+    for(i=0; i<2; i++) token = strtok(NULL, " ");
+    alignment_length = atoi(token);
+    printf("\tNumber of taxa = %d Number of Characters = %d\n\n", number_taxa, alignment_length);
+
 
     likelihood = build_starting_tree (likelihood);
 
@@ -86,7 +93,7 @@ int main (int argc, char *argv[])
     /* now read tree from PAUP file, capturing the name definitions */
     treefilename = malloc(1000*sizeof(char));
     treefilename[0] = '\0';
-    while(!check_for_output("saved to file")) { printf("\n\tWaiting for PAUP .."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+    checkcount =0; while(!check_for_output("saved to file")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     sprintf(treefilename, "paup_%d.tre", pid);
     treefile = fopen(treefilename, "r");
     nexusparser(treefile);
@@ -94,6 +101,19 @@ int main (int argc, char *argv[])
     if(!translated) strcpy(notranslate_newtree, newtree);
     unroottree(newtree);
     unroottree(notranslate_newtree);
+
+
+    /* carry out randomisation test to identify mean of random trees */
+ /*   printf("Carrying out random trees analysis\n");
+    send_command("randtrees;\n");
+    checkcount =0; while(!check_for_output("mean=")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
+
+    token = strtok(output, " =");
+    token = strtok(NULL, " =");
+
+    meanRand_likelihood=atof(token);
+    printf( "\n\nMean -ln L of random trees: %g\n", meanRand_likelihood );
+*/
 /*
     printf("%s\n", newtree);
     
@@ -221,7 +241,7 @@ void send_command(char * sent_command)
   fflush(paup_pipe);
   fprintf (paup_pipe, "log stop=yes;\n");
   fflush(paup_pipe);
-
+  sleep(2);
   }
 
 
@@ -239,7 +259,7 @@ double re_estimate_parameters (double likelihood)
 
       send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores;\n");
      
-      while(!check_for_output("-ln L")) { printf("\n\tWaiting for PAUP .."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+      checkcount=0; while(!check_for_output("-ln L")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
       token = strtok(output, " ");
       for(i=0; i<2; i++) token = strtok(NULL, " ");
       new_likelihood=atof(token);
@@ -251,7 +271,7 @@ double re_estimate_parameters (double likelihood)
         {
         printf("Iteration %d: Better likelihood found, Saving new estimated parameters. Beginning tree search", iteration);
         likelihood = new_likelihood;
-        while(!check_for_output("Score of best tree(s) found")) { printf("\n\tWaiting for PAUP.."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+        checkcount=0; while(!check_for_output("Score of best tree(s) found")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
         token = strtok(output, " ");
         for(i=0; i<6; i++) token = strtok(NULL, " ");
         new_likelihood=atof(token);
@@ -277,7 +297,7 @@ double re_estimate_parameters (double likelihood)
     printf("Generating starting ML tree\n");
     send_command ("set criterion=like; lset NST=6; hs;");
  
-    while(!check_for_output("Score of best tree(s) found")) { printf("\n\tWaiting for PAUP.."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+    checkcount=0; while(!check_for_output("Score of best tree(s) found")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     token = strtok(output, " ");
     for(i=0; i<6; i++) token = strtok(NULL, " ");
     likelihood=atof(token);
@@ -875,7 +895,7 @@ int test_reverse_constraints(char * translated_tree)
 
 
           printf("\tBest reverse Constraint -ln L = %g\tdifference = %g\n", new_likelihood, new_likelihood-likelihood);
-          sprintf(weight, "%g", new_likelihood- likelihood);
+          sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/alignment_length);
 
           /* find the end of this split in the named tree string to append the weight as a label */
 
@@ -949,7 +969,7 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
     sprintf(comm, "hs constraints=constraint_%d enforce=yes converse=yes;\n", constraint_num);
     send_command (comm);
  
-    while(!check_for_output("Score of best tree(s) found")) { printf("\n\tWaiting for PAUP.."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+    checkcount=0; while(!check_for_output("Score of best tree(s) found")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     token = strtok(output, " ");
     for(i=0; i<6; i++) token = strtok(NULL, " ");
     likelihood=atof(token);
@@ -976,7 +996,7 @@ double re_estimate_constraint_parameters (double likelihood, int constraint_num)
 
       send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores;\n");
      
-      while(!check_for_output("-ln L")) { printf("\n\tWaiting for PAUP .."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+      checkcount=0; while(!check_for_output("-ln L")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
       token = strtok(output, " ");
       for(i=0; i<2; i++) token = strtok(NULL, " ");
       new_likelihood=atof(token);
@@ -992,11 +1012,11 @@ double re_estimate_constraint_parameters (double likelihood, int constraint_num)
         likelihood = new_likelihood;
         
 
-        sprintf(comm, "hs constraints=constraint_%d enforce=yes;\n", constraint_num);
+        sprintf(comm, "hs constraints=constraint_%d enforce=yes converse=yes;\n", constraint_num);
         send_command (comm);
  
 
-        while(!check_for_output("Score of best tree(s) found")) { printf("\n\tWaiting for PAUP.."); fflush(stdout); sleep(5); printf("."); fflush(stdout);}
+        checkcount=0; while(!check_for_output("Score of best tree(s) found")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
         token = strtok(output, " ");
         for(i=0; i<6; i++) token = strtok(NULL, " ");
         new_likelihood=atof(token);
