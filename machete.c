@@ -29,7 +29,7 @@ int comment(FILE *file);
 int setup_pipe (void);
 int close_pipe (void);
 void unroottree(char * tree);
-int test_reverse_constraints(char * tree, char * translated_tree);
+int test_reverse_constraints(char * translated_tree);
 double build_starting_constraint_tree (double likelihood, char *constraint, int constraint_num); 
 double re_estimate_constraint_parameters (double likelihood, int constraint_num);
 
@@ -115,7 +115,7 @@ int main (int argc, char *argv[])
     /* Next identify each split and for each, define a constraint, and fine the likelihood of the best tree that does not contain that split */
       printf("\nExtract all constraints defined by best tree and carry out reverse constraint analysis for each\n");
 
-     test_reverse_constraints(notranslate_newtree, newtree);
+     test_reverse_constraints(newtree);
 
      
 
@@ -810,18 +810,20 @@ void unroottree(char * tree)
     }
 
 
-int test_reverse_constraints(char * tree, char * translated_tree)
+int test_reverse_constraints(char * translated_tree)
   {
     int i=0, k=0, l=0, j=0, x=0, y=0, z=0, q=0, splitnumber=0, constraint_num=0;
-    char taxaname[1000], constraint[1000000], weight[10000], tmptree[1000000];
+    char taxaname[1000], constraint[1000000], weight[10000], tree[1000000], tmptree[1000000];
 
     taxaname[0] = '\0';
     constraint[0] = '\0'; j=0;
     weight[0] = '\0';
     tmptree[0] = '\0';
+    tree[0]='\0';
+
     
 
-
+    strcpy(tree, translated_tree);
 
     while(tree[i] != ';')
     {
