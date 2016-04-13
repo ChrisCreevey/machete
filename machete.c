@@ -104,7 +104,7 @@ int main (int argc, char *argv[])
 
 
     /* carry out randomisation test to identify mean of random trees */
-    printf("Carrying out random trees analysis\n");
+    /*printf("Carrying out random trees analysis\n");
     send_command("randtrees;\n");
     checkcount =0; while(!check_for_output("mean=")) { if(checkcount == 0) { printf("\n\tWaiting for PAUP .."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
 
@@ -113,7 +113,7 @@ int main (int argc, char *argv[])
 
     meanRand_likelihood=atof(token);
     printf( "\n\tMean -ln L of random trees: %g\n", meanRand_likelihood );
-
+*/
 /*
     printf("%s\n", newtree);
     
@@ -282,7 +282,7 @@ double re_estimate_parameters (double likelihood)
     printf("\tDifference in -ln L less than 1 unit, stopping search\n");
     sprintf(comm, "savetrees file=paup_%d.tre brLens=yes;\n", pid);
     send_command(comm);
-    printf("Best tree found after %d iterations with -ln L %g saved to file paup_%d.tre;\n\n", iteration-1,  likelihood, pid); 
+    printf("Best tree found after %d iterations with -ln L %g saved to file paup_%d.tre;\n\n", iteration-1,  new_likelihood, pid); 
 
     free(comm);
     return(new_likelihood);
@@ -895,7 +895,9 @@ int test_reverse_constraints(char * translated_tree)
 
 
           printf("\tBest reverse Constraint -ln L = %g\tdifference = %g\n", new_likelihood, new_likelihood-likelihood);
-          sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood));
+         /* sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood)); */
+          sprintf(weight, "%g", new_likelihood- likelihood);
+
 
           /* find the end of this split in the named tree string to append the weight as a label */
 
@@ -965,7 +967,7 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
     sprintf(comm, "constraints constraint_%d = (%s);", constraint_num, constraint);
     send_command(comm );
 
-    printf("\tGenerating starting ML using reverse constraint tree\n");
+    printf("\tGenerating starting ML tree using reverse constraint tree\n");
     sprintf(comm, "hs constraints=constraint_%d enforce=yes converse=yes;\n", constraint_num);
     send_command (comm);
  
