@@ -23,8 +23,6 @@ HPCWALES_parpllel_programming.pdf
 
 machete.c~
 
-machete.c
-
 Machete.tgz
 
 mhc.fa
@@ -74,3 +72,5 @@ simulation/test_tree1_L1000.nex_1PCnoise.fasta
 simulation/test_tree1_L1000.nex.fasta
 
 Primate.nex~
+
+.gitignore~
