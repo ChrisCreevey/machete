@@ -396,9 +396,9 @@ double re_estimate_parameters (double likelihood)
                 }
               token = strtok(output, " ");
               for(i=0; i<2; i++) token = strtok(NULL, " ");
-              new_likelihood=atof(token);
+              test_likelihood=atof(token);
               printf( "\n\tBest -ln L: %g\n", new_likelihood );
-              if(round(new_likelihood) < round(likelihood))
+              if(round(test_likelihood) < round(likelihood))
                 {
                 new_likelihood = new_likelihood;
                 best_aafeq = t; best_aaRMatrix=q;
@@ -1162,9 +1162,9 @@ int test_reverse_constraints(char * translated_tree)
           if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) == 0 ) numsites_supporting_neither++;
           }    
 
-          printf("\n\tBest reverse Constraint -ln L = %g\tdifference = %g\t Proportion sites preferring best tree = %f\n", new_likelihood, new_likelihood-likelihood, 1-((double)numsites_supporting_constraint/((double)alignment_length-(double)numsites_supporting_neither)));
+          printf("\n\tBest reverse Constraint -ln L = %g\tdifference = %g\t Proportion sites preferring best tree = %f\n", new_likelihood, new_likelihood-likelihood, 1-((double)numsites_supporting_constraint/(double)alignment_length));
          /* sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood)); */
-          sprintf(weight, "%d/%g/%f", constraint_num, new_likelihood- likelihood, 1-((double)numsites_supporting_constraint/((double)alignment_length-(double)numsites_supporting_neither)));
+          sprintf(weight, "%d/%g/%f", constraint_num, new_likelihood- likelihood, 1-((double)numsites_supporting_constraint/(double)alignment_length));
 
 
           /* find the end of this split in the named tree string to append the weight as a label */
