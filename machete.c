@@ -351,6 +351,7 @@ void send_command(char * sent_command)
   fprintf (paup_pipe, "exe %s;\n", paupblockfile);
   fflush(paup_pipe);
   fprintf (paup_pipe, "log stop=yes;\n");
+  fprintf (paup_pipe, ";");
   fflush(paup_pipe);
   sleep(2);
   }
@@ -461,7 +462,7 @@ double re_estimate_parameters (double likelihood)
             printf("Iteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
 
      
-            send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores;");
+            send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;");
             checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
             if(response == 3)
               {
@@ -480,8 +481,8 @@ double re_estimate_parameters (double likelihood)
               {
               likelihood = new_likelihood;
 
-              printf("Iteration %d: Better likelihood found, Saving new estimated parameters. Beginning tree search", iteration);
-              send_command ("lset Rmatrix=previous Basefreq=previous rates=gamma shape=estimate; hs;");
+              printf("Iteration %d: Better likelihood found. Beginning tree search", iteration);
+              send_command ("hs;");
               checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
               if(response == 3)
                 {
