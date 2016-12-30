@@ -237,8 +237,7 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
     {
     error = TRUE;
     }
-  free(newtree);
-  free(str);
+
 
   sprintf(str, "%s.sitelike.txt", argv[1]);
   file=fopen(str, "w");
@@ -257,6 +256,7 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
   fclose(file);
 
   for(i=0; i<(number_taxa-2); i++) free(site_likelihoods[i]);
+  
   free(site_likelihoods);
   if(translated)
     {
@@ -268,7 +268,8 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
       }
     free(names);
     }
-
+  free(newtree);
+  free(str);
 
 return(error);
 }
@@ -542,7 +543,7 @@ double re_estimate_parameters (double likelihood)
     token = strtok(output, " ");
     for(i=0; i<6; i++) token = strtok(NULL, " ");
     likelihood=atof(token);
-    printf( "\tBest -ln L: %g\n\n", likelihood );
+    printf( "\n\tBest -ln L: %g\n\n", likelihood );
 
     return(likelihood);
     }
@@ -599,13 +600,14 @@ int close_pipe ()
     fprintf (paup_pipe, "quit;\n");
     fflush(paup_pipe);
 
-    /* Close grep_pipe, cehcking for errors */
+    /* Close paup_pipe, cehcking for errors */
     if (pclose (paup_pipe) != 0)
       {
         fprintf (stderr,
-                 "Could not run 'paup', or other error.\n");
+                 "Could close 'paup', or other error.\n");
         success = FALSE;
       }
+
 
   return(success);
   }
@@ -1078,6 +1080,7 @@ int test_reverse_constraints(char * translated_tree)
   {
     int i=0, k=0, l=0, j=0, x=0, y=0, z=0, q=0, splitnumber=0, constraint_num=0, numsites_supporting_constraint=0, numsites_supporting_neither=0;
     char taxaname[1000], constraint[1000000], weight[10000], tree[1000000], tmptree[1000000];
+    double sumlikesuppbest=0, sumlikesuppconstr = 0;
 
 
     taxaname[0] = '\0';
@@ -1156,16 +1159,26 @@ int test_reverse_constraints(char * translated_tree)
           new_likelihood = build_starting_constraint_tree (likelihood, constraint, constraint_num);
 
          /* new_likelihood = re_estimate_constraint_parameters (new_likelihood, constraint_num); */ /* It is likely unnecessary to re-estimate all the parameters for the constraint trees when everything has been optimised already for the "best" tree */
-          numsites_supporting_constraint =0;
+          numsites_supporting_constraint =0; numsites_supporting_neither=0;
+          sumlikesuppbest =0; sumlikesuppconstr=0;
          for(x=0; x<alignment_length; x++) 
           {  
-          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) > 0 ) numsites_supporting_constraint++;
+          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) > 0 )
+            {
+              numsites_supporting_constraint++;
+              sumlikesuppconstr=sumlikesuppconstr+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
+            }
+          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) < 0 )
+            {
+              sumlikesuppbest=sumlikesuppbest+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
+            }
+ 
           if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) == 0 ) numsites_supporting_neither++;
           }    
 
-          printf("\n\tBest reverse Constraint -ln L = %g\tdifference = %g\t Proportion sites preferring best tree = %f\n", new_likelihood, new_likelihood-likelihood, 1-((double)numsites_supporting_constraint/(double)alignment_length));
+          printf("\n\tBest reverse Constraint -ln L = %g\n\tDifference = %g (composed of %g supporintg unconstrained tree and %g supporting constrained tree)\tProportion likelihood decay  = %g\n", new_likelihood, new_likelihood-likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr), (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
          /* sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood)); */
-          sprintf(weight, "%d/%g/%f", constraint_num, new_likelihood- likelihood, 1-((double)numsites_supporting_constraint/(double)alignment_length));
+          sprintf(weight, "%d/%g/%g/%g/%g", constraint_num, new_likelihood- likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr) , (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
 
 
           /* find the end of this split in the named tree string to append the weight as a label */
