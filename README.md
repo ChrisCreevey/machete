@@ -10,7 +10,7 @@ Machete controls and interacts with Paup using a pipe, and not using a predefine
 
 ## Algorithm
 
-Machete carrys out the following steps:
+Machete carries out the following steps:
 
 1. Identifies the phylogeny best supported by the inputted alignment by:
   * Carrying out a heuristic search of tree space.
