@@ -8,7 +8,7 @@ Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and
 
 Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
 
-##Algorithm
+## Algorithm
 
 Machete carrys out the following steps:
 
@@ -24,14 +24,40 @@ Machete carrys out the following steps:
 5. Calculate the likelihood decay support for each internal branch and output the best phylogeny with the support values labelled on each branch
 
 
-# Installation
+## Installation
 
-Download the machete.c file above, or if you have git installed, type the command `git clone 
+Download the machete.c file above, or if you have git installed, type the command `git clone https://github.com/ChrisCreevey/machete.git`
+
+Run the following command to create a version of machete for your system (linux or macosx).
 
 ```
 cc machete.c -o machete -lm
 ```
 
+You will also need a copy of paup. A binary for your system can be downloaded at [https://people.sc.fsu.edu/~dswofford/paup_test/](https://people.sc.fsu.edu/~dswofford/paup_test/).
+
+This will need to be renamed "paup" and may need to be made executable:
+
+```
+mv paupVERSION_SYSTEM paup
+chmod a+x paup
+```
+
+It would be best to move both paup and machete to somewhere on your path (like ~/bin) to make both available everywhere in the system.
+
+## Using machete
+
+To use machete, just call the program with the name of the nexus file to be used:
+
+```
+machete NEXUSFILE
+```
+
+An example file `Primate.nex` has been provided. To run the reverse constraint analysis for this file use the command:
+
+```
+machete Primate.nex
+```
 
 
 
