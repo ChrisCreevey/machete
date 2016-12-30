@@ -26,7 +26,8 @@ Machete carries out the following steps:
 
 ## Installation
 
-Download the machete.c file above, or if you have git installed, type the command `git clone https://github.com/ChrisCreevey/machete.git`
+Download the machete.c file above, or if you have git installed, type the command 
+`git clone https://github.com/ChrisCreevey/machete.git`
 
 Run the following command to create a version of machete for your system (linux or macosx).
 
