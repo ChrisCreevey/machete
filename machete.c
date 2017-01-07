@@ -571,7 +571,7 @@ double re_estimate_parameters (double likelihood)
             printf("Iteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
 
      
-            send_command ("lset Rmatrix=estimate Basefreq=Estimate; lscores 1; lset Rmatrix=previous Basefreq=previous;");
+            send_command ("lset NST=6 lCollapse=no Rmatrix=estimate Basefreq=Estimate; lscores 1; lset Rmatrix=previous Basefreq=previous;");
            /* send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;"); */
 
             checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
