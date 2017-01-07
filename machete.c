@@ -430,7 +430,7 @@ void send_command(char * sent_command)
 double re_estimate_parameters (double likelihood)
   {
   double new_likelihood = 0, test_likelihood = likelihood, prev_likelihood = likelihood ;
-  int i=0, iteration=1, best_aafeq=0, best_aaRMatrix=0, best_rates=0;
+  int i=0, iteration=1, best_aafeq=0, best_aaRMatrix=0, best_rates=0, stop=FALSE;
   char * token, *comm;
   size_t t = 0, q=0;
   char aafreq[][10] = { "empirical", "equal" }, aaRMatrix[][10] = { "JTT", "JTTPAML", "PAM", "MTrev24", "WAG", "LG" }, rates[][30] = { "equal", "gamma shape=estimate" };
@@ -560,7 +560,7 @@ double re_estimate_parameters (double likelihood)
       if(datatype==0) /* DNA sequences */
         {
 
-         while(fabs((round(new_likelihood)) - round(likelihood)) > 0)
+         while(fabs((round(new_likelihood)) - round(likelihood)) > 0 && stop == FALSE)
             {
             if(iteration>1) 
               {
@@ -606,6 +606,7 @@ double re_estimate_parameters (double likelihood)
               new_likelihood=atof(token);
               printf( "\n\tBest -ln L: %g\n", new_likelihood );
               }
+            if(num_trees > 0) stop=TRUE;
             iteration++;
             }
           printf("\tDifference in -ln L less than 1 unit, stopping search\n");
