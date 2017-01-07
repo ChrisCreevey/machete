@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifndef TRUE
 #define TRUE 1
@@ -33,7 +34,6 @@ int close_pipe (void);
 void unroottree(char * tree);
 int test_reverse_constraints(char * translated_tree);
 double build_starting_constraint_tree (double likelihood, char *constraint, int constraint_num); 
-double re_estimate_constraint_parameters (double likelihood, int constraint_num);
 void print_time(double diff);
 void read_sitelike_file(int component);
 
@@ -44,8 +44,8 @@ void read_sitelike_file(int component);
 FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile;
 
 int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0;
-char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE;
+char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *infile=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
 
@@ -54,8 +54,8 @@ double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihood
 
 int main (int argc, char *argv[])
 {
-  char * token, string[1000000], *tok, *str ;
-  int iteration=1, error = FALSE, i, j, found=FALSE;
+  char * token, string[1000000], *tok, *str;
+  int iteration=1, error = FALSE, i, j, found=FALSE, fflag=0;
   FILE *file = NULL;
   
   newtree = malloc(100000*sizeof(char));
@@ -73,14 +73,37 @@ int main (int argc, char *argv[])
 
   if(argc < 2)
   {
-    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete <nexus file>\"\n\nWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\n" );
+    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[ch]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c instruct  all commands sent to Paup to also be printed to standard error\n\t-h prints this message\n\n" );
     exit(1);
   }
+  while ((c = getopt(argc, argv, "f:ch")) != -1)
+    {   
+      switch (c) 
+      {
+      case 'c':
+        print_command = TRUE;
+        break;
+      case 'f':
+        fflag = 1;
+        infile = optarg;
+        break;
+      case 'h':
+        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[ch]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c instruct  all commands sent to Paup to also be printed to standard error\n\t-h prints this message\n\n" );
+        exit(1);
+        break;
+      }
+    }
+
+  if(fflag == 0) 
+    { /* -f was mandatory */
+    fprintf(stderr, "%s: missing -f option\n", argv[0]);
+    exit(1);
+    }
 
  /* Test input file exists and read in the nexus file so we can determine the datatype */
-if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is there */
+if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is there */
     {                          /* Open the fundamental tree file */
-    printf("Error: Cannot open file %s\n", argv[1]);
+    fprintf(stderr, "Error: Cannot open file %s\n", infile);
     exit(1);
     }
   else
@@ -107,7 +130,7 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
       }
     if(found == FALSE)
       { 
-      printf("Error: Datatype not found in nexus file. It muct be one of \"dna\", \"rna\", \"nucleotide\" or \"protein\"\n");
+      fprintf(stderr, "Error: Datatype not found in nexus file. It muct be one of \"dna\", \"rna\", \"nucleotide\" or \"protein\"\n");
       fclose(nexusfile);
       exit(0);
       }
@@ -129,13 +152,13 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
 
 
 
-    printf("\nExecuting file %s", argv[1]);
-    sprintf(command, "execute %s;", argv[1]);
+    printf("\nExecuting file %s", infile);
+    sprintf(command, "execute %s; exclude uninf;", infile);
     send_command (command);
     checkcount=0; while((response = check_for_output("Data matrix has")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
-      printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+      fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
 
@@ -214,7 +237,7 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
       print_time(difftime(interval3, interval2));
      
 
-     sprintf(command, "%s.labelledtree.tre", argv[1]);
+     sprintf(command, "%s.labelledtree.tre", infile);
      outputtree = fopen(command, "w");
      fprintf(outputtree, "%s [%g]\n", newtree, likelihood);
      fclose (outputtree);
@@ -239,7 +262,7 @@ if((nexusfile = fopen(argv[1], "r")) == '\0')   /* check to see if the file is t
     }
 
 
-  sprintf(str, "%s.sitelike.txt", argv[1]);
+  sprintf(str, "%s.sitelike.txt", infile);
   file=fopen(str, "w");
   fprintf(file, "Best_tree\t");
   for(i=0; i<(number_taxa-3); i++) fprintf(file, "constrint_tree %d\t", i);
@@ -341,7 +364,7 @@ void send_command(char * sent_command)
   fprintf(paupblock, "#NEXUS\nbegin paup;\n%s\nend;", sent_command);
   fflush(paupblock);
   fclose(paupblock);
-  printf("\n\t\t[Paup command: %s]",sent_command );
+  if(print_command == TRUE) fprintf(stderr, "\n\t\t[Paup command: %s]\n",sent_command );
   fflush(stdout);
 
  /* printf ("Command sent: %s\n", sent_command); */
@@ -360,49 +383,86 @@ void send_command(char * sent_command)
 
 double re_estimate_parameters (double likelihood)
   {
-  double new_likelihood = 0, test_likelihood = likelihood;
-  int i=0, iteration=1, best_aafeq=0, best_aaRMatrix=0;
+  double new_likelihood = 0, test_likelihood = likelihood, prev_likelihood = likelihood ;
+  int i=0, iteration=1, best_aafeq=0, best_aaRMatrix=0, best_rates=0;
   char * token, *comm;
   size_t t = 0, q=0;
-  char aafreq[][10] = { "empirical", "equal" }, aaRMatrix[][10] = { "JTT", "JTTPAML", "PAM", "MTrev24", "WAG", "LG" } ;
+  char aafreq[][10] = { "empirical", "equal" }, aaRMatrix[][10] = { "JTT", "JTTPAML", "PAM", "MTrev24", "WAG", "LG" }, rates[][30] = { "equal", "gamma shape=estimate" };
 
   comm = malloc(10000*sizeof(char));
   comm[0] = '\0'; 
 
+
+      /* First determine if we need to use a gamma distribution. */
+      printf ("Begin testing for optimal site rates:\n");
+
+      for( t = 0; t < sizeof(rates) / sizeof(rates[0]); t++)
+        {
+        sprintf(comm, "lset rates=%s; lscores;", rates[t]);  
+
+        printf("\n\tCalculating likelihood with rates=%s", rates[t]); fflush(stdout);
+        send_command (comm);
+        checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
+        if(response == 3)
+          {
+          fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+          exit(0);
+          }
+        token = strtok(output, " ");
+        for(i=0; i<2; i++) token = strtok(NULL, " ");
+        test_likelihood=atof(token);
+        printf( "\n\tBest -ln L: %g\n", test_likelihood );
+        if(fabs(round(test_likelihood) - round(prev_likelihood)) > 0)
+          {
+          prev_likelihood = test_likelihood;
+          best_rates = t;
+          }
+        }
+      if(best_rates==1)
+        sprintf(comm, "lset rates=gamma shape=previous;");
+      else
+        sprintf(comm, "lset rates=%s;", rates[best_rates]);
+      send_command (comm);
+      printf("\n\tBest rates model found: %s\n\n", rates[best_rates]);
+
+
+      likelihood=prev_likelihood;
+
       if(datatype==1) /* Protein sequences */
         {
 
-
           /* Estimate the best aafreq ( from "empirical|equal|estimate|") */
         printf ("Begin testing for optimal AA Rmatrix and frequencies:\n");
-        while(round(new_likelihood) < round(likelihood))
+        while(fabs(round(new_likelihood) - round(likelihood)) > 0)
           {
           if(iteration>1) 
               {
                 printf("\tTree with better likelihood found using optimised models, reestimation best models with this tree\n\n");
                 likelihood = new_likelihood;
               }
-
+          prev_likelihood=likelihood;
           for( t = 0; t < sizeof(aafreq) / sizeof(aafreq[0]); t++)
             {
             for( q = 0; q < sizeof(aaRMatrix) / sizeof(aaRMatrix[0]); q++)
               {
-              sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores;", aafreq[t], aaRMatrix[q]);  
+           /*   sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores;", aafreq[t], aaRMatrix[q]);  */
+              sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores;", aafreq[t], aaRMatrix[q]);  
+
               printf("\n\tCalculating likelihood with aafreq=%s and aaRMatrix=%s", aafreq[t], aaRMatrix[q]); fflush(stdout);
               send_command (comm);
               checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
               if(response == 3)
                 {
-                printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+                fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
                 exit(0);
                 }
               token = strtok(output, " ");
               for(i=0; i<2; i++) token = strtok(NULL, " ");
               test_likelihood=atof(token);
-              printf( "\n\tBest -ln L: %g\n", new_likelihood );
-              if(round(test_likelihood) < round(likelihood))
+              printf( "\n\t-ln L: %g\n", test_likelihood );
+              if(fabs(round(test_likelihood) - round(prev_likelihood)) > 0)
                 {
-                new_likelihood = new_likelihood;
+                prev_likelihood = test_likelihood;
                 best_aafeq = t; best_aaRMatrix=q;
                 }
               }
@@ -411,15 +471,17 @@ double re_estimate_parameters (double likelihood)
           printf("\nBest AA model found: aafreq=%s, aaRMatrix=%s\n", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
           printf("\tRe-estimating parameters with best model");
           if(strcmp(aafreq[best_aafeq], "estimate")== 0)
-            sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores; lset aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+           /* sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]); */
           else
-            sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+           /* sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]); */
 
           send_command(comm);
           checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
           if(response == 3)
             {
-            printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+            fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
             exit(0);
             }
           token = strtok(output, " ");
@@ -427,7 +489,7 @@ double re_estimate_parameters (double likelihood)
           new_likelihood=atof(token);
           printf( "\n\tBest -ln L: %g\n", new_likelihood );
 
-          if(round(new_likelihood) < round(test_likelihood))
+          if(fabs((round(new_likelihood)) - round(likelihood)) > 0)
             { 
             printf("\nUsing predicted aafreq and searching for best tree");
             sprintf(comm, "hs;");
@@ -435,7 +497,7 @@ double re_estimate_parameters (double likelihood)
             checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
             if(response == 3)
               {
-              printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+              fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
               exit(0);
               }
             token = strtok(output, " ");
@@ -452,22 +514,24 @@ double re_estimate_parameters (double likelihood)
       if(datatype==0) /* DNA sequences */
         {
 
-         while(round(new_likelihood) < round(likelihood))
+         while(fabs((round(new_likelihood)) - round(likelihood)) > 0)
             {
             if(iteration>1) 
               {
-                printf("\tTree with better likelihood found, starting reestimation of paramenters with this tree\n\n");
+                printf("\tTree with changed likelihood found, starting reestimation of paramenters with this tree\n\n");
                 likelihood = new_likelihood;
               }
 
             printf("Iteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
 
      
-            send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;");
+            send_command ("lset Rmatrix=estimate Basefreq=Estimate; lscores; lset Rmatrix=previous Basefreq=previous;");
+           /* send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;"); */
+
             checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
             if(response == 3)
               {
-              printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+              fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
               exit(0);
               }
 
@@ -478,16 +542,16 @@ double re_estimate_parameters (double likelihood)
             printf( "\n\tBest -ln L: %g\n", new_likelihood );
         
                      
-            if(round(new_likelihood) < round(likelihood))
+            if(fabs((round(new_likelihood)) - round(likelihood)) > 0)
               {
               likelihood = new_likelihood;
 
-              printf("Iteration %d: Better likelihood found. Beginning tree search", iteration);
+              printf("Iteration %d: Changed likelihood detected. Beginning tree search", iteration);
               send_command ("hs;");
               checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
               if(response == 3)
                 {
-                printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+                fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
                 exit(0);
                 }
 
@@ -508,7 +572,7 @@ double re_estimate_parameters (double likelihood)
     checkcount=0; while((response = check_for_output("Tree scores (and parameter estimates) written to file:")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
-      printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+      fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
     read_sitelike_file(-1);
@@ -536,7 +600,7 @@ double re_estimate_parameters (double likelihood)
     checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
-      printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+      fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
 
@@ -571,11 +635,7 @@ double re_estimate_parameters (double likelihood)
   else
     {  
 
-    /* Stop Paup from printing output unnecessarily to the screen */
-    fprintf (paup_pipe, "set increase=auto warnReset=no warnTree=no warnTSave=no warnBlkName=no warnRoot=no  warnRedef=no errorStop=no errorBeep=no queryBeep=no flushLog=yes taxLabels=full;\n");
- 
-    
-    /* Create logfilename for Paup */
+ /* Create logfilename for Paup */
     logfilename[0]='\0';
     strcpy(logfilename, "paup_");
     strcat(logfilename, pid_string);
@@ -587,6 +647,9 @@ double re_estimate_parameters (double likelihood)
     strcat(sys, logfilename);
     system(sys);
 
+    /* Stop Paup from printing output unnecessarily to the screen */
+    send_command ("set increase=auto warnReset=no warnTree=no warnTSave=no warnBlkName=no warnRoot=no  warnRedef=no errorStop=no errorBeep=no queryBeep=no flushLog=yes taxLabels=full;");
+ 
     }
 
   return(success);
@@ -597,14 +660,13 @@ int close_pipe ()
   {
   int success = TRUE;
    /* Quit Paup */
-    fprintf (paup_pipe, "quit;\n");
-    fflush(paup_pipe);
+    send_command("quit;");
 
     /* Close paup_pipe, cehcking for errors */
     if (pclose (paup_pipe) != 0)
       {
         fprintf (stderr,
-                 "Could close 'paup', or other error.\n");
+                 "Could not close 'paup', or other error.\n");
         success = FALSE;
       }
 
@@ -770,7 +832,7 @@ int nexusparser(FILE *nexusfile)
                           }
                         if(found == -1)
                           {
-                          printf("Error: taxa %s is not in the translation table\n", single);
+                          fprintf(stderr, "Error: taxa %s is not in the translation table\n", single);
                           error = TRUE;
                           }
                         else
@@ -1256,7 +1318,7 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
     checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
-      printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+      fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
     token = strtok(output, " ");
@@ -1267,12 +1329,12 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
 
     /* Calculate all the site likelihoods for the best tree found and read into memory */
     printf("\tCalculating site likelihoods of reverse constraints tree\n");
-    sprintf(comm, "lscores /sitelikes=yes scoreFile=site_like_scores_%d.txt replace=yes display=no;", pid);
+    sprintf(comm, "lscores 1 /sitelikes=yes scoreFile=site_like_scores_%d.txt replace=yes display=no;", pid);
     send_command (comm);
     checkcount=0; while((response = check_for_output("Tree scores (and parameter estimates) written to file:")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
-      printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);      
+      fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);      
       exit(0);
       }
     read_sitelike_file(constraint_num);
@@ -1285,77 +1347,6 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
     free(comm);
     return(likelihood);
     }
-
-
-
-
-double re_estimate_constraint_parameters (double likelihood, int constraint_num)
-  {
-  double new_likelihood = 0;
-  int i=0, iteration=1;
-  char * token, *comm;
-
-  comm = malloc(10000*sizeof(char));
-  comm[0] = '\0';
-   while(round(new_likelihood) < round(likelihood))
-      {
-      printf("\tIteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
-
-      if(datatype==0) send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate lscores;\n");
-      if(datatype==1) send_command ("lset rates=gamma shape=estimate; lscores;\n");
-     
-      checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
-      if(response == 3)
-        {
-        printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
-        exit(0);
-        }
-
-      token = strtok(output, " ");
-      for(i=0; i<2; i++) token = strtok(NULL, " ");
-      new_likelihood=atof(token);
-      printf( "\n\t\tBest -ln L: %g\n", new_likelihood );
-
-
-      if(datatype==0) send_command ("lset Rmatrix=previous Basefreq=previous rates=gamma shape=previous; hs;");
-      if(datatype==1) send_command ("lset rates=gamma shape=previous; hs;");
-
-      if(round(new_likelihood) < round(likelihood))
-        {
-        printf("\tIteration %d: Better likelihood found, Saving new estimated parameters. Beginning tree search using reverse constraint", iteration);
-
-        likelihood = new_likelihood;
-        
-
-        sprintf(comm, "hs constraints=constraint_%d enforce=yes converse=yes;", constraint_num);
-        send_command (comm);
- 
-
-        checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
-        if(response == 3)
-          {
-          printf("Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
-          exit(0);
-          }
-
-        token = strtok(output, " ");
-        for(i=0; i<6; i++) token = strtok(NULL, " ");
-        new_likelihood=atof(token);
-        printf( "\n\t\tBest -ln L: %g\n", new_likelihood );
-        }
-      iteration++;
-      }
-    /* append the best reverse constraint tree to the output file */
-    sprintf(comm, "savetrees file=paup_%d.constraint_%d.tre brLens=yes format=altnexus;", pid, constraint_num);
-    send_command (comm);
-
-
-
-    printf("\t\tDifference in -ln L less than 1 unit, stopping search\n");
-
-    free(comm);
-    return(new_likelihood);
-  }
 
 
   void print_time(double diff)

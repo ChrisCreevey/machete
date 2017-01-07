@@ -146,3 +146,13 @@ simulation/seq-gen/tree2_100bp.phy
 simulation/seq-gen/tree2_100bp.phy.fasta
 
 simulation/seq-gen/tree2.ph~
+
+out
+
+simulation/seq-gen/tree1_100bp.phy.fasta.1.nexus
+
+simulation/seq-gen/tree1_100bp.phy.fasta.1.seq
+
+tree1_100bp.phy.fasta.1.nexus
+
+export.nex
