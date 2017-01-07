@@ -44,7 +44,7 @@ void read_sitelike_file(int component);
 FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile, *guidetreefile;
 
 int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0;
 char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *guidetree = NULL,  *infile=NULL, *gtfilename=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
@@ -185,16 +185,26 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     alignment_length = atoi(token);
     printf("\n\tNumber of taxa = %d Number of Characters = %d\n\n", number_taxa, alignment_length);
 
+    /* Check to see if the nexus file constained a tree */
+    if((response = check_for_output("read from TREES block")) == 1) /* indicates that a trees block was provided with the nexus file */
+      {
+      num_trees = atoi(strtok(output, " "));
+      printf("\t%d tree(s) provided in the nexus file, the first will be used for the likelihood decay calculations\n\n", num_trees);
+      }
+
+
     /* generate arrays to hold the sites likelihood later */
     site_likelihoods = malloc((number_taxa-2)*sizeof(double *));
     for(i=0; i<(number_taxa-2); i++) site_likelihoods[i]=malloc((alignment_length)*sizeof(double));
 
 
+    if(num_trees == 0)
+      {  
+      likelihood = build_starting_tree (likelihood);
 
-    likelihood = build_starting_tree (likelihood);
-
-    interval2 = time(NULL);
-    print_time(difftime(interval2, interval1));
+      interval2 = time(NULL);
+      print_time(difftime(interval2, interval1));
+      }
 
     likelihood = re_estimate_parameters (likelihood);
 
@@ -434,7 +444,7 @@ double re_estimate_parameters (double likelihood)
 
       for( t = 0; t < sizeof(rates) / sizeof(rates[0]); t++)
         {
-        sprintf(comm, "lset rates=%s; lscores;", rates[t]);  
+        sprintf(comm, "lset rates=%s; lscores 1;", rates[t]);  
 
         printf("\n\tCalculating likelihood with rates=%s", rates[t]); fflush(stdout);
         send_command (comm);
@@ -482,7 +492,7 @@ double re_estimate_parameters (double likelihood)
             for( q = 0; q < sizeof(aaRMatrix) / sizeof(aaRMatrix[0]); q++)
               {
            /*   sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores;", aafreq[t], aaRMatrix[q]);  */
-              sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores;", aafreq[t], aaRMatrix[q]);  
+              sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores 1;", aafreq[t], aaRMatrix[q]);  
 
               printf("\n\tCalculating likelihood with aafreq=%s and aaRMatrix=%s", aafreq[t], aaRMatrix[q]); fflush(stdout);
               send_command (comm);
@@ -507,10 +517,10 @@ double re_estimate_parameters (double likelihood)
           printf("\nBest AA model found: aafreq=%s, aaRMatrix=%s\n", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
           printf("\tRe-estimating parameters with best model");
           if(strcmp(aafreq[best_aafeq], "estimate")== 0)
-            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores; lset aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores 1; lset aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
            /* sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous aafreq=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]); */
           else
-            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
+            sprintf(comm, "lset aafreq=%s aaRMatrix=%s; lscores 1;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]);
            /* sprintf(comm, "lset rates=gamma shape=estimate aafreq=%s aaRMatrix=%s; lscores; lset shape=previous;", aafreq[best_aafeq], aaRMatrix[best_aaRMatrix]); */
 
           send_command(comm);
@@ -525,7 +535,7 @@ double re_estimate_parameters (double likelihood)
           new_likelihood=atof(token);
           printf( "\n\tBest -ln L: %g\n", new_likelihood );
 
-          if(fabs((round(new_likelihood)) - round(likelihood)) > 0)
+          if(fabs((round(new_likelihood)) - round(likelihood)) > 0 && num_trees ==0)
             { 
             printf("\nUsing predicted aafreq and searching for best tree");
             sprintf(comm, "hs;");
@@ -561,7 +571,7 @@ double re_estimate_parameters (double likelihood)
             printf("Iteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
 
      
-            send_command ("lset Rmatrix=estimate Basefreq=Estimate; lscores; lset Rmatrix=previous Basefreq=previous;");
+            send_command ("lset Rmatrix=estimate Basefreq=Estimate; lscores 1; lset Rmatrix=previous Basefreq=previous;");
            /* send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;"); */
 
             checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
@@ -578,7 +588,7 @@ double re_estimate_parameters (double likelihood)
             printf( "\n\tBest -ln L: %g\n", new_likelihood );
         
                      
-            if(fabs((round(new_likelihood)) - round(likelihood)) > 0)
+            if(fabs((round(new_likelihood)) - round(likelihood)) > 0 && num_trees == 0)
               {
               likelihood = new_likelihood;
 
