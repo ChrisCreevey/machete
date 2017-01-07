@@ -44,7 +44,7 @@ void read_sitelike_file(int component);
 FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile, *guidetreefile;
 
 int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0, buildflag=FALSE;
 char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *guidetree = NULL,  *infile=NULL, *gtfilename=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
@@ -74,10 +74,10 @@ int main (int argc, char *argv[])
 
   if(argc < 2)
   {
-    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\n" );
+    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\n" );
     exit(1);
   }
-  while ((c = getopt(argc, argv, "f:chtg:")) != -1)
+  while ((c = getopt(argc, argv, "f:chtg:b")) != -1)
     {   
       switch (c) 
       {
@@ -89,7 +89,7 @@ int main (int argc, char *argv[])
         infile = optarg;
         break;
       case 'h':
-        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\n" );
+        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\n" );
         exit(1);
         break;
       case 't':
@@ -98,6 +98,9 @@ int main (int argc, char *argv[])
       case 'g':
         gtflag=TRUE;
         gtfilename = optarg;
+        break;
+      case 'b':
+        buildflag=TRUE;
         break;
       }
     }
@@ -186,10 +189,13 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     printf("\n\tNumber of taxa = %d Number of Characters = %d\n\n", number_taxa, alignment_length);
 
     /* Check to see if the nexus file constained a tree */
-    if((response = check_for_output("read from TREES block")) == 1) /* indicates that a trees block was provided with the nexus file */
-      {
-      num_trees = atoi(strtok(output, " "));
-      printf("\t%d tree(s) provided in the nexus file, the first will be used for the likelihood decay calculations\n\n", num_trees);
+    if(buildflag == FALSE)
+      { 
+      if((response = check_for_output("read from TREES block")) == 1) /* indicates that a trees block was provided with the nexus file */
+        {
+        num_trees = atoi(strtok(output, " "));
+        printf("\t%d tree(s) provided in the nexus file, the first will be used for the likelihood decay calculations\n\n", num_trees);
+        }
       }
 
 
@@ -458,7 +464,7 @@ double re_estimate_parameters (double likelihood)
         for(i=0; i<2; i++) token = strtok(NULL, " ");
         test_likelihood=atof(token);
         printf( "\n\tBest -ln L: %g\n", test_likelihood );
-        if(fabs(round(test_likelihood) - round(prev_likelihood)) > 0)
+        if(fabs(round(test_likelihood)) - fabs(round(prev_likelihood)) < 0)
           {
           prev_likelihood = test_likelihood;
           best_rates = t;
@@ -479,7 +485,7 @@ double re_estimate_parameters (double likelihood)
 
           /* Estimate the best aafreq ( from "empirical|equal|estimate|") */
         printf ("Begin testing for optimal AA Rmatrix and frequencies:\n");
-        while(fabs(round(new_likelihood) - round(likelihood)) > 0)
+        while(fabs(round(new_likelihood)) - fabs(round(likelihood)) < 0 && stop == FALSE)
           {
           if(iteration>1) 
               {
@@ -506,7 +512,7 @@ double re_estimate_parameters (double likelihood)
               for(i=0; i<2; i++) token = strtok(NULL, " ");
               test_likelihood=atof(token);
               printf( "\n\t-ln L: %g\n", test_likelihood );
-              if(fabs(round(test_likelihood) - round(prev_likelihood)) > 0)
+              if(fabs(round(test_likelihood)) - fabs(round(prev_likelihood)) < 0)
                 {
                 prev_likelihood = test_likelihood;
                 best_aafeq = t; best_aaRMatrix=q;
@@ -535,7 +541,7 @@ double re_estimate_parameters (double likelihood)
           new_likelihood=atof(token);
           printf( "\n\tBest -ln L: %g\n", new_likelihood );
 
-          if(fabs((round(new_likelihood)) - round(likelihood)) > 0 && num_trees ==0)
+          if(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && num_trees ==0)
             { 
             printf("\nUsing predicted aafreq and searching for best tree");
             sprintf(comm, "hs;");
@@ -551,6 +557,7 @@ double re_estimate_parameters (double likelihood)
             new_likelihood=atof(token);
             printf( "\n\tBest -ln L: %g\n", new_likelihood );
             }
+          if(num_trees > 0) stop=TRUE;
           iteration++;
           }
         printf("\tDifference in -ln L less than 1 unit, stopping search\n");
@@ -560,7 +567,7 @@ double re_estimate_parameters (double likelihood)
       if(datatype==0) /* DNA sequences */
         {
 
-         while(fabs((round(new_likelihood)) - round(likelihood)) > 0 && stop == FALSE)
+         while(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && stop == FALSE)
             {
             if(iteration>1) 
               {
@@ -588,7 +595,7 @@ double re_estimate_parameters (double likelihood)
             printf( "\n\tBest -ln L: %g\n", new_likelihood );
         
                      
-            if(fabs((round(new_likelihood)) - round(likelihood)) > 0 && num_trees == 0)
+            if(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && num_trees == 0)
               {
               likelihood = new_likelihood;
 
