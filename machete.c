@@ -41,11 +41,11 @@ void read_sitelike_file(int component);
 
 
 
-FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile;
+FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile, *guidetreefile;
 
 int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE;
-char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *infile=NULL ;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE;
+char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *guidetree = NULL,  *infile=NULL, *gtfilename=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
 
@@ -55,11 +55,12 @@ double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihood
 int main (int argc, char *argv[])
 {
   char * token, string[1000000], *tok, *str;
-  int iteration=1, error = FALSE, i, j, found=FALSE, fflag=0;
+  int iteration=1, error = FALSE, i, j, found=FALSE, fflag=0, deltmp=TRUE;
   FILE *file = NULL;
   
   newtree = malloc(100000*sizeof(char));
   besttree = malloc(100000*sizeof(char));
+  guidetree = malloc(100000*sizeof(char));
   str = malloc(100000*sizeof(char));
   notranslate_newtree = malloc(100000*sizeof(char));
   newtree[0] = '\0'; besttree[0] = '\0'; notranslate_newtree[0] = '\0';
@@ -73,10 +74,10 @@ int main (int argc, char *argv[])
 
   if(argc < 2)
   {
-    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[ch]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c instruct  all commands sent to Paup to also be printed to standard error\n\t-h prints this message\n\n" );
+    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\n" );
     exit(1);
   }
-  while ((c = getopt(argc, argv, "f:ch")) != -1)
+  while ((c = getopt(argc, argv, "f:chtg:")) != -1)
     {   
       switch (c) 
       {
@@ -88,8 +89,15 @@ int main (int argc, char *argv[])
         infile = optarg;
         break;
       case 'h':
-        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[ch]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c instruct  all commands sent to Paup to also be printed to standard error\n\t-h prints this message\n\n" );
+        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\n" );
         exit(1);
+        break;
+      case 't':
+        deltmp=FALSE;
+        break;
+      case 'g':
+        gtflag=TRUE;
+        gtfilename = optarg;
         break;
       }
     }
@@ -99,11 +107,19 @@ int main (int argc, char *argv[])
     fprintf(stderr, "%s: missing -f option\n", argv[0]);
     exit(1);
     }
+  if(gtflag == TRUE)
+    {
+    if((guidetreefile = fopen(gtfilename, "r")) == '\0')   /* check to see if the file is there */
+      {                          /* Open the fundamental tree file */
+      fprintf(stderr, "Error: Cannot open guide tree file %s\n", gtfilename);
+      exit(1);
+      }
+    }
 
  /* Test input file exists and read in the nexus file so we can determine the datatype */
 if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is there */
     {                          /* Open the fundamental tree file */
-    fprintf(stderr, "Error: Cannot open file %s\n", infile);
+    fprintf(stderr, "Error: Cannot open nexus file %s\n", infile);
     exit(1);
     }
   else
@@ -267,6 +283,24 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
   fprintf(file, "Best_tree\t");
   for(i=0; i<(number_taxa-3); i++) fprintf(file, "constrint_tree %d\t", i);
   fprintf(file, "\n");
+
+  if(deltmp==TRUE)
+    { 
+    sprintf(str, "rm -f Paup_output_%s.txt", pid_string);
+    system(str);
+    sprintf(str, "rm -f paup_%s.altnexus.tre", pid_string);
+    system(str);   
+    sprintf(str, "rm -f paup_%s.tre", pid_string);
+    system(str);
+    sprintf(str, "rm -f paup_%s_log.txt", pid_string);
+    system(str);
+    sprintf(str, "rm -f paupblock_%s.command", pid_string);
+    system(str);
+    sprintf(str, "rm -f site_like_scores_%s.txt", pid_string);
+    system(str);
+    sprintf(str, "rm -f site_like_scores_%s.txt", pid_string);
+    system(str);
+    }
    
   for(j=0; j<alignment_length; j++)
     { 
@@ -277,6 +311,7 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     fprintf(file, "\n");
     }
   fclose(file);
+  if(gtflag == TRUE) fclose(guidetreefile);
 
   for(i=0; i<(number_taxa-2); i++) free(site_likelihoods[i]);
   
@@ -292,6 +327,7 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     free(names);
     }
   free(newtree);
+  free(guidetree);
   free(str);
 
 return(error);
@@ -1339,10 +1375,16 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
       }
     read_sitelike_file(constraint_num);
 
-
+    if(constraint_num == 0)
+        {
+        sprintf(sys, "rm -f %s.constraint.tre;",infile );
+        system(sys);
+        }
     /* append the best reverse constraint tree to the output file */
-    sprintf(comm, "savetrees file=paup_%d.constraint_%d.tre brLens=yes format=altnexus;", pid, constraint_num);
+    sprintf(comm, "savetrees file=%s.constraint.tre brLens=yes format=phylip append=yes;",infile );
     send_command (comm);
+    sprintf(sys, "echo \"[constraint tree %d. -ln L %g]\" >> %s.constraint.tre", constraint_num, likelihood, infile);
+    system(sys);
 
     free(comm);
     return(likelihood);
