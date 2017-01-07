@@ -48,17 +48,28 @@ It would be best to move both paup and machete to somewhere on your path (like ~
 
 ## Using machete
 
-To use machete, just call the program with the name of the nexus file to be used:
+To use machete, it is necessary to pas as input a nexus formatted alignment file using the option '-f':
 
 ```
-machete NEXUSFILE
+machete -f NEXUSFILE
 ```
 
 An example file `Primate.nex` has been provided. To run the reverse constraint analysis for this file use the command:
 
 ```
-machete Primate.nex
+machete -f Primate.nex
 ```
 
+Other options are:
+
+ -c which tells Machete to print all the commands sent to Paup to the standard error. This can then be redirected to a sperate file using the following syntax:
+ 
+ ```
+ machete -f Primate.nex -c 2> paupcommands.txt
+ ```
+ 
+  -h prints a description of the usage of machete.
+ 
+ 
 
 
