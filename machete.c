@@ -1413,10 +1413,12 @@ double build_starting_constraint_tree (double likelihood, char *constraint, int 
         system(sys);
         }
     /* append the best reverse constraint tree to the output file */
-    sprintf(comm, "savetrees file=%s.constraint.tre brLens=yes format=phylip append=yes;",infile );
-    send_command (comm);
     sprintf(sys, "echo \"[constraint tree %d. -ln L %g]\" >> %s.constraint.tre", constraint_num, likelihood, infile);
     system(sys);
+    sprintf(comm, "savetrees file=%s.constraint.tre brLens=yes format=altNexus append=yes;",infile );
+    send_command (comm);
+    
+    
 
     free(comm);
     return(likelihood);
