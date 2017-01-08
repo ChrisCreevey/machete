@@ -13,7 +13,7 @@ Machete controls and interacts with Paup using a pipe, and not using a predefine
 Machete carries out the following steps:
 
 1. Identifies the phylogeny best supported by the inputted alignment by:
-  * Carrying out a heuristic search of tree space.
+  * Carrying out a heuristic search of tree space (unless a tree is provided - see below).
   * Optimising model parameters using best tree.
   * Repeat previous steps until likelihoods stops improving.
 
