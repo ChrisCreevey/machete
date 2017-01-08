@@ -77,7 +77,7 @@ int main (int argc, char *argv[])
     printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\n" );
     exit(1);
   }
-  while ((c = getopt(argc, argv, "f:chtg:b")) != -1)
+  while ((c = getopt(argc, argv, "f:cht:b")) != -1)
     {   
       switch (c) 
       {
@@ -95,10 +95,6 @@ int main (int argc, char *argv[])
       case 't':
         deltmp=FALSE;
         break;
-      case 'g':
-        gtflag=TRUE;
-        gtfilename = optarg;
-        break;
       case 'b':
         buildflag=TRUE;
         break;
@@ -110,14 +106,7 @@ int main (int argc, char *argv[])
     fprintf(stderr, "%s: missing -f option\n", argv[0]);
     exit(1);
     }
-  if(gtflag == TRUE)
-    {
-    if((guidetreefile = fopen(gtfilename, "r")) == '\0')   /* check to see if the file is there */
-      {                          /* Open the fundamental tree file */
-      fprintf(stderr, "Error: Cannot open guide tree file %s\n", gtfilename);
-      exit(1);
-      }
-    }
+
 
  /* Test input file exists and read in the nexus file so we can determine the datatype */
 if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is there */
@@ -155,8 +144,14 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
       }
     else
       {
-      if(datatype==0) printf("\nDNA sequences detected. DNA GTR model will be used and optimisation of parameters carried out.\n");
-      if(datatype==1) printf("\nProtein sequences detected. Best Protein model will be determined.\n");
+      if(datatype==0) 
+        {
+          printf("\nDNA sequences detected. DNA GTR model will be used and optimisation of parameters carried out.\n");
+        }
+      if(datatype==1) 
+        {
+          printf("\nProtein sequences detected. Best Protein model will be determined.\n");
+        }
       }
     }
     fclose(nexusfile);
@@ -197,7 +192,8 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
         printf("\t%d tree(s) provided in the nexus file, the first will be used for the likelihood decay calculations\n\n", num_trees);
         }
       }
-
+    if(datatype==0) send_command ("set criterion=like; lset NST=6 lCollapse=no;");
+    if(datatype==1) send_command ("set criterion=like; lset aaFreq=empirical aaRMatrix=JTT lCollapse=no;");
 
     /* generate arrays to hold the sites likelihood later */
     site_likelihoods = malloc((number_taxa-2)*sizeof(double *));
@@ -211,6 +207,7 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
       interval2 = time(NULL);
       print_time(difftime(interval2, interval1));
       }
+      interval2 = time(NULL);
 
     likelihood = re_estimate_parameters (likelihood);
 
@@ -444,6 +441,24 @@ double re_estimate_parameters (double likelihood)
   comm = malloc(10000*sizeof(char));
   comm[0] = '\0'; 
 
+      if(num_trees > 0)
+        { 
+          printf("\n\tDeterming likelihood for given tree\n");
+          send_command("lscores 1;");
+          checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
+          if(response == 3)
+            {
+            fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
+            exit(0);
+            }
+          token = strtok(output, " ");
+          for(i=0; i<2; i++) token = strtok(NULL, " ");
+          likelihood=atof(token);
+          printf( "\n\tBest -ln L: %g\n", likelihood );
+          test_likelihood = likelihood;
+          prev_likelihood = likelihood;
+        }
+
 
       /* First determine if we need to use a gamma distribution. */
       printf ("Begin testing for optimal site rates:\n");
@@ -464,7 +479,7 @@ double re_estimate_parameters (double likelihood)
         for(i=0; i<2; i++) token = strtok(NULL, " ");
         test_likelihood=atof(token);
         printf( "\n\tBest -ln L: %g\n", test_likelihood );
-        if(fabs(round(test_likelihood)) - fabs(round(prev_likelihood)) < 0)
+        if((fabs(round(test_likelihood)) - fabs(round(prev_likelihood))) < 0)
           {
           prev_likelihood = test_likelihood;
           best_rates = t;
@@ -485,7 +500,7 @@ double re_estimate_parameters (double likelihood)
 
           /* Estimate the best aafreq ( from "empirical|equal|estimate|") */
         printf ("Begin testing for optimal AA Rmatrix and frequencies:\n");
-        while(fabs(round(new_likelihood)) - fabs(round(likelihood)) < 0 && stop == FALSE)
+        while((fabs(round(new_likelihood)) - fabs(round(likelihood))) < 0 && stop == FALSE)
           {
           if(iteration>1) 
               {
@@ -537,11 +552,11 @@ double re_estimate_parameters (double likelihood)
             exit(0);
             }
           token = strtok(output, " ");
-          for(i=0; i<6; i++) token = strtok(NULL, " ");
+          for(i=0; i<2; i++) token = strtok(NULL, " ");
           new_likelihood=atof(token);
           printf( "\n\tBest -ln L: %g\n", new_likelihood );
 
-          if(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && num_trees ==0)
+          if((fabs((round(new_likelihood))) - fabs(round(likelihood))) < 0 && num_trees ==0)
             { 
             printf("\nUsing predicted aafreq and searching for best tree");
             sprintf(comm, "hs;");
@@ -567,7 +582,7 @@ double re_estimate_parameters (double likelihood)
       if(datatype==0) /* DNA sequences */
         {
 
-         while(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && stop == FALSE)
+         while((fabs((round(new_likelihood))) - fabs(round(likelihood))) < 0 && stop == FALSE)
             {
             if(iteration>1) 
               {
@@ -578,7 +593,7 @@ double re_estimate_parameters (double likelihood)
             printf("Iteration %d: Estimating parameters given tree and recalculating likelihood", iteration);
 
      
-            send_command ("lset NST=6 lCollapse=no Rmatrix=estimate Basefreq=Estimate; lscores 1; lset Rmatrix=previous Basefreq=previous;");
+            send_command ("lset lCollapse=no Rmatrix=estimate Basefreq=Estimate; lscores 1; lset Rmatrix=previous Basefreq=previous;");
            /* send_command ("lset Rmatrix=estimate Basefreq=Estimate rates=gamma shape=estimate; lscores; lset Rmatrix=previous Basefreq=previous shape=previous;"); */
 
             checkcount=0; while((response = check_for_output("-ln L")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
@@ -595,7 +610,7 @@ double re_estimate_parameters (double likelihood)
             printf( "\n\tBest -ln L: %g\n", new_likelihood );
         
                      
-            if(fabs((round(new_likelihood))) - fabs(round(likelihood)) < 0 && num_trees == 0)
+            if((fabs((round(new_likelihood))) - fabs(round(likelihood))) < 0 && num_trees == 0)
               {
               likelihood = new_likelihood;
 
@@ -648,9 +663,8 @@ double re_estimate_parameters (double likelihood)
     int i;
 
     printf("Generating starting ML tree");
-    if(datatype == 0) send_command ("set criterion=like; lset NST=6 lCollapse=no; hs;");
-    if(datatype == 1) send_command ("set criterion=like; lset aaFreq=empirical aaRMatrix=JTT lCollapse=no; hs;");
- 
+    
+    send_command("hs;");
     checkcount=0; while((response = check_for_output("Score of best tree(s) found")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
     if(response == 3)
       {
