@@ -7,7 +7,7 @@ Bootstrap proportion (BP) support remains a commonly used metric of the reliabil
 
 Despite this, with long-enough alignments, 100% BP can be achieved even if 49% of the data supports an alternative topology. The heterogeneous nature of the underlying support for branches with 100% BP requires a novel approach and a change in our notion of "support".
 
-To address this, we suggest a likelihood decay support value. Based on the premise of Bremmer support, it is the difference in likelihoods of the optimal trees that do or do not include a given split. Likelihood decay represents a novel way to assess support which discriminates between different internal branches and is insensitive to alignment length. We demonstrate these properties with simulations and investigate the phylogenetic support in "solved" phylogenomic studies where 100% BP support has been obtained.
+To address this, Machete implements a likelihood decay support value. Based on the premise of Bremmer support, it is the difference in likelihoods of the optimal trees that do or do not include a given split. Likelihood decay represents a novel way to assess support which discriminates between different internal branches and is insensitive to alignment length. 
 
 Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to calculate the likelihood decay supports for each internal branch of the resulting tree.
 
