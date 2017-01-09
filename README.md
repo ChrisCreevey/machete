@@ -1,10 +1,15 @@
 # machete
-Machete: Likelihood reverse constraint analysis using PAUP
+Machete: Likelihood decay indices using PAUP
 
 ## Overview
-Machete implements a likelihood reverse constraint method for assessing the support in an alignment for each internal branch of a tree.
 
-Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to calculate the reverse constraint supports.
+Bootstrap proportion (BP) support remains a commonly used metric of the reliability of genome-scale phylogenetic analyses because sampling error decreases as the length of sequences increase resulting in a trend where BP support approaches 100%. However, not all conflicting phylogenetic signal is due to sampling error; processes such as incomplete lineage sorting and horizontal gene transfer can result in valid alternative genetic histories.
+
+Despite this, with long-enough alignments, 100% BP can be achieved even if 49% of the data supports an alternative topology. The heterogeneous nature of the underlying support for branches with 100% BP requires a novel approach and a change in our notion of "support".
+
+To address this, we suggest a likelihood decay support value. Based on the premise of Bremmer support, it is the difference in likelihoods of the optimal trees that do or do not include a given split. Likelihood decay represents a novel way to assess support which discriminates between different internal branches and is insensitive to alignment length. We demonstrate these properties with simulations and investigate the phylogenetic support in "solved" phylogenomic studies where 100% BP support has been obtained.
+
+Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to calculate the likelihood decay supports for each internal branch of the resulting tree.
 
 Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
 
