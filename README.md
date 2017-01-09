@@ -101,11 +101,11 @@ Machete produces three standard output files:
   
 >15.19 = The difference in the -lnL between the unconstrained tree and constrained tree for this branch.
   
->41.0945 = The sum of the likelihood difference supporting the unconstrain tree at this branch.
+>41.0945 = The absolute value of the sum of likelihood differences supporting the unconstrained tree at this branch.
   
->25.9042 = The sum of the likelihood difference supportinh the constained tree at this branch.
+>25.9042 = The absolute value of the sum of the likelihood differences supporting the constrained tree at this branch.
   
->0.613363 = Proportion of the absolute likelihood difference supporting the unconstrained tree {calculated in this case as: (41.0945)/(41.0945+25.9042)}
+>0.613363 = Proportion of the absolute likelihood differences supporting the unconstrained tree {calculated in this case as: (41.0945)/(41.0945+25.9042)}
 
 These supports can be viewed on the tree using a phylogeny viewer such as [figtree](http://tree.bio.ed.ac.uk/software/figtree/).
 
