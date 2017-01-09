@@ -97,7 +97,7 @@ Machete produces three standard output files:
 
 `<NEXUSFILE>.labelledtree.tre` will contain the optimimum phylogeny either calculated by PAUP or provided by the user with internal branch labels in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
 
->2 = the internal branch ID (and constaint number)
+>2 = the internal branch ID (and constraint number)
   
 >15.19 = The difference in the -lnL between the unconstrained tree and constrained tree for this branch.
   
