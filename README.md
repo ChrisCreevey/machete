@@ -1,4 +1,4 @@
-# machete
+# Machete
 Machete: Likelihood decay indices using PAUP
 
 ## Overview
