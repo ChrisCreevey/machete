@@ -92,11 +92,11 @@ If you wish to over-ride this functionality, use the -b option (see below).
  
 ###-s
  
-  -s <constraint number> specifies the constraint at which to start the analysis
+  -s [constraint number] specifies the constraint at which to start the analysis
  
 ###-e
  
-  -e <constraint number> specifies the constraint at which to end the analysis
+  -e [constraint number] specifies the constraint at which to end the analysis
  
 ###-l
  
@@ -107,14 +107,14 @@ If you wish to over-ride this functionality, use the -b option (see below).
 Machete produces three standard output files:
 
 ```
-<NEXUSFILE>.labelledtree.tre
-<NEXUSFILE>.sitelike.txt
-<NEXUSFILE>.constraint.tre
+[NEXUSFILE].labelledtree.tre
+[NEXUSFILE].sitelike.txt
+[NEXUSFILE].constraint.tre
 ```
 
-*Where* `<NEXUSFILE>` is the name of the alignment input file.
+*Where* `[NEXUSFILE]` is the name of the alignment input file.
 
-`<NEXUSFILE>.labelledtree.tre` will contain the optimimum phylogeny either calculated by PAUP or provided by the user with internal branch labels in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
+`[NEXUSFILE].labelledtree.tre` will contain the optimimum phylogeny either calculated by PAUP or provided by the user with internal branch labels in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
 
 >2 = the internal branch ID (and constraint number)
   
@@ -128,9 +128,9 @@ Machete produces three standard output files:
 
 These supports can be viewed on the tree using a phylogeny viewer such as [figtree](http://tree.bio.ed.ac.uk/software/figtree/).
 
-`<NEXUSFILE>.sitelike.txt` contains all the sitelikelihoods calcuated for the unconstrained tree and for each of the constrained trees (labelled by internal branch ID).
+`[NEXUSFILE].sitelike.txt` contains all the sitelikelihoods calcuated for the unconstrained tree and for each of the constrained trees (labelled by internal branch ID).
 
-`<NEXUSFILE>.constraint.tre` contains all the best constrained trees for each internal branch in phylip format (labelled by internal branch ID).
+`[NEXUSFILE].constraint.tre` contains all the best constrained trees for each internal branch in phylip format (labelled by internal branch ID).
 
 
 
