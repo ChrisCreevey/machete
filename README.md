@@ -82,6 +82,11 @@ Other options are:
  
   -h prints a description of the usage of machete.
  
+ 	-s <constraint number> specifies the constraint at which to start the analysis
+  
+	 -e <constraint number> specific the constraint at which to end the analysis
+  
+	 -l list constraints (and do not carry out reverse constraints analysis)
  
 ## Outputs
 
