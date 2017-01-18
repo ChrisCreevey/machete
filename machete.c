@@ -43,8 +43,8 @@ void read_sitelike_file(int component);
 
 FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile, *guidetreefile;
 
-int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0, buildflag=FALSE;
+int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0, constart=0, conend=-1; /*dataypes 0=DNA, 1=Protein */
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0, buildflag=FALSE, listcons=FALSE;
 char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *guidetree = NULL,  *infile=NULL, *gtfilename=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
@@ -74,10 +74,10 @@ int main (int argc, char *argv[])
 
   if(argc < 2)
   {
-    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\n" );
+    printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\t-s <constraint number> specifies the constraint to start at\n\t-e <constraint number> specific the constraint to end at\n\t-l list constraints (and do not carry out reverse constraints analysis)\n\n" );
     exit(1);
   }
-  while ((c = getopt(argc, argv, "f:cht:b")) != -1)
+  while ((c = getopt(argc, argv, "f:cht:bs:e:l")) != -1)
     {   
       switch (c) 
       {
@@ -89,7 +89,7 @@ int main (int argc, char *argv[])
         infile = optarg;
         break;
       case 'h':
-        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\n" );
+        printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cth]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\t-s <constraint number> specifies the constraint to start at\n\t-e <constraint number> specific the constraint to end at\n\t-l list constraints (and do not carry out reverse constraints analysis)\n\n" );
         exit(1);
         break;
       case 't':
@@ -97,6 +97,15 @@ int main (int argc, char *argv[])
         break;
       case 'b':
         buildflag=TRUE;
+        break;
+      case 's':
+        constart=atoi(optarg);
+        break;
+      case 'e':
+        conend=atoi(optarg);
+        break;
+      case 'l':
+        listcons=TRUE;
         break;
       }
     }
@@ -257,22 +266,24 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     /* we now have the best tree in memory anlong with a translation table */
 
     /* Next identify each split and for each, define a constraint, and fine the likelihood of the best tree that does not contain that split */
-      printf("\nExtract all constraints defined by best tree and carry out reverse constraint analysis for each\n");
+      printf("\nExtracting constraints defined by best tree and carry out reverse constraint analysis for each\n");
 
       interval2 = time(NULL);
       test_reverse_constraints(newtree);
 
-      interval3 = time(NULL);
-      print_time(difftime(interval3, interval2));
-     
+      if(listcons==FALSE)
+        {   
+        interval3 = time(NULL);
+        print_time(difftime(interval3, interval2));
+   
 
-     sprintf(command, "%s.labelledtree.tre", infile);
-     outputtree = fopen(command, "w");
-     fprintf(outputtree, "%s [%g]\n", newtree, likelihood);
-     fclose (outputtree);
+        sprintf(command, "%s.labelledtree.tre", infile);
+        outputtree = fopen(command, "w");
+        fprintf(outputtree, "%s [%g]\n", newtree, likelihood);
+        fclose (outputtree);
 
-     printf("\n\n\nresulting weighted tree:\n%s [%g]\n\nTree with labels saved to file %s\n\n", newtree, likelihood, command);
-
+        printf("\n\n\nresulting weighted tree:\n%s [%g]\n\nTree with labels saved to file %s\n\n", newtree, likelihood, command);
+        }
    /* Clean up and exit */
     free(treefilename);
 
@@ -1229,10 +1240,13 @@ int test_reverse_constraints(char * translated_tree)
       }
       total_constraints--;
       total_constraints--;
-      
+    if(constart < 1) constart = 1;
+    if(constart > total_constraints) constart = total_constraints;
+    if(conend == -1) conend = total_constraints;
+    if(conend > total_constraints) conend = total_constraints;
 
     resultingtrees = malloc((total_constraints+2)*sizeof(char *));
-    for(i=0; i<(total_constraints+2); i++)
+    for(i=0; i<total_constraints+2; i++)
       {
       resultingtrees[i]=malloc(1000000*sizeof(char));
       resultingtrees[i][0]= '\0';
@@ -1282,78 +1296,85 @@ int test_reverse_constraints(char * translated_tree)
           constraint[j-1] = ')'; /* overwrites the extra comma at the end */
           constraint[j] = '\0';
           
-
-          /* Calculate the likeliood of the best tree that does not contain this constraint */
-
-
-          new_likelihood = build_starting_constraint_tree (likelihood, constraint, constraint_num);
-
-         /* new_likelihood = re_estimate_constraint_parameters (new_likelihood, constraint_num); */ /* It is likely unnecessary to re-estimate all the parameters for the constraint trees when everything has been optimised already for the "best" tree */
-          numsites_supporting_constraint =0; numsites_supporting_neither=0;
-          sumlikesuppbest =0; sumlikesuppconstr=0;
-         for(x=0; x<alignment_length; x++) 
-          {  
-          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) > 0 )
-            {
-              numsites_supporting_constraint++;
-              sumlikesuppconstr=sumlikesuppconstr+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
-            }
-          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) < 0 )
-            {
-              sumlikesuppbest=sumlikesuppbest+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
-            }
- 
-          if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) == 0 ) numsites_supporting_neither++;
-          }    
-
-          printf("\n\tBest reverse Constraint -ln L = %g\n\tDifference = %g (composed of %g supporintg unconstrained tree and %g supporting constrained tree)\tProportion likelihood decay  = %g\n", new_likelihood, new_likelihood-likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr), (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
-         /* sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood)); */
-          sprintf(weight, "%d/%g/%g/%g/%g", constraint_num, new_likelihood- likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr) , (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
-
-
-          /* find the end of this split in the named tree string to append the weight as a label */
-
-          /* find the beginning of this split in the translated tree */
-          x=0; y=-1;
-          while(translated_tree[x] != '(' || y!=constraint_num)
-            {
-            x++;
-            if(translated_tree[x] == '(') y++;
-            }
-          /* x now points to the beginning of the current split */
-          /* find the end of the split */
-          l=0;
-         while((l != 0 || translated_tree[x-1] != ')') && translated_tree[x] != ';' )   /* CHANGED RECENTLY FROM while(l != 0 && tree[k-1] != ')' && tree[k] != ';' ) */
-            {
-            switch(translated_tree[x])
+          if(constraint_num >= constart && constraint_num <= conend)
+            /* Calculate the likeliood of the best tree that does not contain this constraint */
+          {
+            if(listcons==FALSE)
               {
-              case '(':
-                l++;
+              new_likelihood = build_starting_constraint_tree (likelihood, constraint, constraint_num);
+
+             /* new_likelihood = re_estimate_constraint_parameters (new_likelihood, constraint_num); */ /* It is likely unnecessary to re-estimate all the parameters for the constraint trees when everything has been optimised already for the "best" tree */
+              numsites_supporting_constraint =0; numsites_supporting_neither=0;
+              sumlikesuppbest =0; sumlikesuppconstr=0;
+             for(x=0; x<alignment_length; x++) 
+              {  
+              if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) > 0 )
+                {
+                  numsites_supporting_constraint++;
+                  sumlikesuppconstr=sumlikesuppconstr+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
+                }
+              if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) < 0 )
+                {
+                  sumlikesuppbest=sumlikesuppbest+(site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]);
+                }
+     
+              if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) == 0 ) numsites_supporting_neither++;
+              }    
+
+              printf("\n\tBest reverse Constraint -ln L = %g\n\tDifference = %g (composed of %g supporintg unconstrained tree and %g supporting constrained tree)\tProportion likelihood decay  = %g\n", new_likelihood, new_likelihood-likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr), (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
+             /* sprintf(weight, "%g/%g", new_likelihood- likelihood, (new_likelihood- likelihood)/(meanRand_likelihood-likelihood)); */
+              sprintf(weight, "%d/%g/%g/%g/%g", constraint_num, new_likelihood- likelihood, fabs(sumlikesuppbest), fabs(sumlikesuppconstr) , (fabs(sumlikesuppbest)/((fabs(sumlikesuppconstr)+(fabs(sumlikesuppbest))))));
+
+
+              /* find the end of this split in the named tree string to append the weight as a label */
+
+              /* find the beginning of this split in the translated tree */
+              x=0; y=-1;
+              while(translated_tree[x] != '(' || y!=constraint_num)
+                {
                 x++;
-                break;
-              case ')':
-                l--;
-                x++;
-                break;
-              default:
-                x++;
-                break;
-              }
-            }
-          /* x now points to the position AFTER the closing bracket for this component */
-            q=0;
-            for(z=x; z<(strlen(translated_tree)); z++)
+                if(translated_tree[x] == '(') y++;
+                }
+              /* x now points to the beginning of the current split */
+              /* find the end of the split */
+              l=0;
+             while((l != 0 || translated_tree[x-1] != ')') && translated_tree[x] != ';' )   /* CHANGED RECENTLY FROM while(l != 0 && tree[k-1] != ')' && tree[k] != ';' ) */
+                {
+                switch(translated_tree[x])
+                  {
+                  case '(':
+                    l++;
+                    x++;
+                    break;
+                  case ')':
+                    l--;
+                    x++;
+                    break;
+                  default:
+                    x++;
+                    break;
+                  }
+                }
+              /* x now points to the position AFTER the closing bracket for this component */
+              q=0;
+              for(z=x; z<(strlen(translated_tree)); z++)
+                {
+                tmptree[q] = translated_tree[z];
+                q++;
+                }
+              tmptree[q] = '\0';
+
+              /* add weight to end of component */
+              translated_tree[x] = '\0';
+              strcat(translated_tree, weight);
+              strcat(translated_tree, tmptree);
+              }  
+            else
               {
-              tmptree[q] = translated_tree[z];
-              q++;
+              printf("Constraint %d = %s\n", constraint_num, constraint);
+
               }
-            tmptree[q] = '\0';
-
-          /* add weight to end of component */
-            translated_tree[x] = '\0';
-            strcat(translated_tree, weight);
-            strcat(translated_tree, tmptree);
-
+          }
 
 
           constraint_num++;
