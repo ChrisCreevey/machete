@@ -96,11 +96,11 @@ If you wish to over-ride this functionality, use the -b option (see below).
  
 ###-e
  
-  -e <constraint number> specific the constraint at which to end the analysis
+  -e <constraint number> specifies the constraint at which to end the analysis
  
 ###-l
  
-  -l list constraints (and do not carry out reverse constraints analysis)
+  -l lists constraints (and do not carry out reverse constraints analysis)
  
 ## Outputs
 
