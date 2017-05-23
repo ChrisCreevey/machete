@@ -54,7 +54,8 @@ It would be best to move both paup and machete to somewhere on your path (like ~
 
 ## Using machete and options
 
-###-f 
+### -f 
+
 To use machete, it is necessary to pass as input a nexus formatted alignment file using the option '-f':
 
 ```
@@ -71,18 +72,19 @@ If this is provided, machete will not try to build the optimum tree, but use the
 If you wish to over-ride this functionality, use the -b option (see below).
 
 
-###-c
+### -c
+
 -c which tells Machete to print all the commands sent to Paup to the standard error. This can then be redirected to a seperate file using the following syntax:
  
  ```
  machete -f Primate.nex -c 2> paupcommands.txt
  ```
  
-###-t
+### -t
  
   -t preserves temporary files
  
-###-b
+### -b
  
   -b forces machete to build an optimum tree when a tree has been provided in the nexus file
  
@@ -94,11 +96,11 @@ If you wish to over-ride this functionality, use the -b option (see below).
  
   -s [constraint number] specifies the constraint at which to start the analysis
  
-###-e
+### -e
  
   -e [constraint number] specifies the constraint at which to end the analysis
  
-###-l
+### -l
  
   -l lists constraints (and do not carry out reverse constraints analysis)
  
