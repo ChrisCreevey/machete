@@ -18,10 +18,13 @@ Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calc
  [Outputs](README.md#outputs)
 
 
+
 ## Overview
 Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to automatically calculate maximum likelihood trees (and/or carry out boostrap analyses) while optimising the models. It has been desinged to allow calculation of the likelihood decay supports for each internal branch of the resulting tree.
 
 Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
+
+
 
 ### Rationale
 
@@ -56,6 +59,9 @@ machete -f alignment_with_treeblock.nexus
 ```
 See the options description below for more details.
 
+
+
+
 ## Algorithm
 
 Machete carries out the following steps:
@@ -70,6 +76,9 @@ Machete carries out the following steps:
 3. For each constraint, carry out a search for the the best tree that does not contain that branch.
 
 5. Calculate the likelihood decay support for each internal branch and output the best phylogeny with the support values labelled on each branch
+
+
+
 
 
 ## Installation
@@ -95,7 +104,32 @@ chmod a+x paup
 
 It would be best to move both paup and machete to somewhere on your path (like ~/bin) to make both available everywhere in the system.
 
+
+
+
 ## Using machete and options
+
+Calling Machete without any options will result in the output of the options avaiable:
+
+```
+Machete: Likelihood reverse constraint analysis using PAUP
+
+ Usage: "machete -f <nexus file> -[cthln] [-s INTEGER] [-e INTEGER] [-r INTEGER]"
+
+	Where: <nexus file> is a nexus formatted alignment file of DNA sequences
+	-c commands sent to Paup to be also printed to standard error
+	-t preserves temporary files
+	-h prints this message
+	-b force build optimum tree (when a tree has been provided in the nexus file)
+	-s <constraint number> specifies the constraint to start at
+	-e <constraint number> specific the constraint to end at
+	-l list constraints (and do not carry out reverse constraints analysis)
+	-n tells machete NOT to carry out the reverse constraint analysis (Just build the best tree)
+	-r tells machete how many boostrap replicates to carry out (by default = 0)
+ 
+ ```
+ 
+In more detail:
 
 ### -f 
 
@@ -156,6 +190,9 @@ If you wish to over-ride this functionality, use the -b option (see below).
   -r [INTEGER] turns on the bootstrapping algorithm carrying out the specified number of repetitions (default = 0)
   NOTE: Only the ML tree is used to define the constraints for the likelihood decay analyses, the boostraps are outputted into a sperate file for information only.
   
+ 
+ 
+ 
  
 ## Outputs
 
