@@ -1,6 +1,21 @@
 # Machete
 Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calculation of likelihood decay indices.
 
+## Sections
+
+ [Overview](README.md#overview)
+
+ [Rationale](README.md#rationale)
+
+ [Quick Start](README.md#quick-start)
+
+ [Installation](README.md#installation)
+
+ [Using machete and options](README.md#Using-machete-and-options)
+
+ [Outputs](README.md#outputs)
+
+
 ## Overview
 Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to automatically calculate maximum likelihood trees (and/or carry out boostrap analyses) while optimising the models. It has been desinged to allow calculation of the likelihood decay supports for each internal branch of the resulting tree.
 
