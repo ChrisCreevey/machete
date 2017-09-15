@@ -8,10 +8,12 @@ Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calc
  [Rationale](README.md#rationale)
 
  [Quick Start](README.md#quick-start)
+ 
+ [Algorithm](README.md#algorithm)
 
  [Installation](README.md#installation)
 
- [Using machete and options](README.md#Using-machete-and-options)
+ [Using machete and options](README.md#using-machete-and-options)
 
  [Outputs](README.md#outputs)
 
