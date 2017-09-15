@@ -79,7 +79,7 @@ int main (int argc, char *argv[])
     printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cthln] [-s INTEGER] [-e INTEGER] [-r INTEGER]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\t-s <constraint number> specifies the constraint to start at\n\t-e <constraint number> specific the constraint to end at\n\t-l list constraints (and do not carry out reverse constraints analysis)\n\t-n tells machete NOT to carry out the reverse constraint analysis (Just build the best tree)\n\t-r tells machete how many boostrap replicates to carry out (by default = 0)\n\n" );
     exit(1);
   }
-  while ((c = getopt(argc, argv, "f:cht:bs:e:lnr:")) != -1)
+  while ((c = getopt(argc, argv, "f:chtbs:e:lnr:")) != -1)
     {   
       switch (c) 
       {
@@ -737,7 +737,7 @@ double re_estimate_parameters (double likelihood)
 
     printf("Beginning ML Boostrap analysis with %d replicates\n", reps);
 
-    sprintf(comm, "boot nrep=%d treefile=%s.boottrees.tre format=altnexus; exe %s.boottrees.tre; contree /LE50=yes strict=no treefile=%s.contree.tre;",reps, infile, infile, infile);
+    sprintf(comm, "boot nrep=%d treefile=%s.boottrees.tre format=altnexus; exe %s.boottrees.tre; contree /LE50=yes majRule=yes strict=no treefile=%s.contree.tre;",reps, infile, infile, infile);
     send_command(comm );  
 
     checkcount=0; while((response = check_for_output("Consensus tree(s) written to treefile:")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
@@ -746,7 +746,7 @@ double re_estimate_parameters (double likelihood)
       fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
-    printf("\nResulting boostrapped phylogeny written to file %s.boottrees.tre\n", infile);
+    printf("\n\tResulting boostrapped phylogeny written to file %s.boottrees.tre\n", infile);
 
     free(comm);
     } 
