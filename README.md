@@ -1,7 +1,12 @@
 # Machete
-Machete: Likelihood decay indices using PAUP
+Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calculation of likelihood decay indices.
 
 ## Overview
+Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to automatically calculate maximum likelihood trees (and/or carry out boostrap analyses) while optimising the models. It has been desinged to allow calculation of the likelihood decay supports for each internal branch of the resulting tree.
+
+Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
+
+### Rationale
 
 Bootstrap proportion (BP) support remains a commonly used metric of the reliability of genome-scale phylogenetic analyses because sampling error decreases as the length of sequences increase resulting in a trend where BP support approaches 100%. However, not all conflicting phylogenetic signal is due to sampling error; processes such as incomplete lineage sorting and horizontal gene transfer can result in valid alternative genetic histories.
 
@@ -9,9 +14,30 @@ Despite this, with long-enough alignments, 100% BP can be achieved even if 49% o
 
 To address this, Machete implements a likelihood decay support value. Based on the premise of Bremmer support, it is the difference in likelihoods of the optimal trees that do or do not include a given split. Likelihood decay represents a novel way to assess support which discriminates between different internal branches and is insensitive to alignment length. 
 
-Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to calculate the likelihood decay supports for each internal branch of the resulting tree.
 
-Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
+
+## Quick Start
+
+### To generate a maximum likeihood tree (DNA or Amino Acid) in PAUP* (while optimising for best models etc) 
+```
+machete -f alignment.nexus -n
+```
+
+### To generate a maximum likelihood tree AND carry out a bootstrap analysis in PAUP* (while optimising for best models etc)
+```
+machete -f alignment.nexus -n -r 100
+```
+
+### To calculate likelihood decay for best tree (given only an alignment) - will also calculate ML tree
+```
+machete -f alignment.nexus 
+```
+
+### To calculate likelihood decay for Given tree - will optimise models to tree provided.
+```
+machete -f alignment_with_treeblock.nexus
+```
+See the options description below for more details.
 
 ## Algorithm
 
@@ -41,7 +67,7 @@ Run the following command to create a version of machete for your system (linux 
 cc machete.c -o machete -lm
 ```
 
-You will also need a copy of paup. A binary for your system can be downloaded at [https://people.sc.fsu.edu/~dswofford/paup_test/](https://people.sc.fsu.edu/~dswofford/paup_test/).
+You will also need a copy of paup. A binary for your system can be downloaded at [http://paup.phylosolutions.com/](http://paup.phylosolutions.com/).
 
 This will need to be renamed "paup" and may need to be made executable:
 
@@ -103,6 +129,16 @@ If you wish to over-ride this functionality, use the -b option (see below).
 ### -l
  
   -l lists constraints (and do not carry out reverse constraints analysis)
+  
+### -n
+
+  -n tells machete to NOT carry out the reverse constraints analysis. This is useful if you want to use machete to just build ML trees or carry out ML boostrap analyses in PAUP*
+  
+### -r
+ 
+  -r [INTEGER] turns on the bootstrapping algorithm carrying out the specified number of repetitions (default = 0)
+  NOTE: Only the ML tree is used to define the constraints for the likelihood decay analyses, the boostraps are outputted into a sperate file for information only.
+  
  
 ## Outputs
 
@@ -133,6 +169,16 @@ These supports can be viewed on the tree using a phylogeny viewer such as [figtr
 `[NEXUSFILE].sitelike.txt` contains all the sitelikelihoods calcuated for the unconstrained tree and for each of the constrained trees (labelled by internal branch ID).
 
 `[NEXUSFILE].constraint.tre` contains all the best constrained trees for each internal branch in phylip format (labelled by internal branch ID).
+
+Two other output files are created if the "-b" bootstrapping option is selected:
+
+```
+[NEXUSFILE].contree.tre
+[NEXUSFILE].boottrees.tre
+```
+
+`[NEXUSFILE].contree.tre` will contain the results of a majority-rule consensus (with minor compatible minor components) of the boostrapped trees in nexus format.
+`[NEXUSFILE].boottrees.tre` will contain all the bootstrapped trees in nexus format
 
 
 
