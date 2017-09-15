@@ -675,7 +675,10 @@ double re_estimate_parameters (double likelihood)
             if(num_trees > 0) stop=TRUE;
             iteration++;
             }
+        if(num_trees == 0)
           printf("\tDifference in -ln L less than 1 unit, stopping search\n");
+        else
+          printf("\tCalculation of likelihood of given tree complete\n");
         }
 
     /* Calculate all the site likelihoods for the best tree found and read into memory */
