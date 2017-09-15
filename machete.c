@@ -616,7 +616,10 @@ double re_estimate_parameters (double likelihood)
           if(num_trees > 0) stop=TRUE;
           iteration++;
           }
-        printf("\tDifference in -ln L less than 1 unit, stopping search\n");
+        if(num_trees == 0)
+          printf("\tDifference in -ln L less than 1 unit, stopping search\n");
+        else
+          printf("\tCalculation of likelihood of given tree complete\n");
         }
 
 
@@ -740,7 +743,7 @@ double re_estimate_parameters (double likelihood)
       fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
-    printf("Resulting boostrapped phylogeny written to file %s.boottree.tre\n", infile);
+    printf("\nResulting boostrapped phylogeny written to file %s.boottrees.tre\n", infile);
 
     free(comm);
     } 
