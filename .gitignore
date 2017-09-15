@@ -156,3 +156,21 @@ simulation/seq-gen/tree1_100bp.phy.fasta.1.seq
 tree1_100bp.phy.fasta.1.nexus
 
 export.nex
+
+*.R~
+
+boottree.40867
+
+outtrees
+
+paupblock_40867.command~
+
+*.pdf
+
+simulation/results_rerun/.Rhistory
+
+simulation/results_rerun/charts.R
+
+simulation/seq-gen/get_bootsim_summary.sh
+
+simulation/seq-gen/get_bootsim_summary.sh~
