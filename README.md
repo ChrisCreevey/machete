@@ -199,14 +199,17 @@ If you wish to over-ride this functionality, use the -b option (see below).
 Machete produces three standard output files:
 
 ```
-[NEXUSFILE].labelledtree.tre
+[NEXUSFILE].bestMLtree.tre
+[NEXUSFILE].likelihood.decays.tre
 [NEXUSFILE].sitelike.txt
 [NEXUSFILE].constraint.tre
 ```
 
 *Where* `[NEXUSFILE]` is the name of the alignment input file.
 
-`[NEXUSFILE].labelledtree.tre` will contain the optimimum phylogeny either calculated by PAUP or provided by the user with internal branch labels in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
+`[NEXUSFILE].bestMLtree.tre` will contain the best ML tree calculated (or the one provided) with branchlengths optimised based onthe the model optimisation carried out.
+
+`[NEXUSFILE].likelihood.decays.tre` will again contain the phylogeny either calculated by PAUP or provided by the user with internal branch labels containg the results of the likelihood decay analysis in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
 
 >2 = the internal branch ID (and constraint number)
   
