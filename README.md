@@ -20,9 +20,9 @@ Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calc
 
 
 ## Overview
-Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP to automatically calculate maximum likelihood trees (and/or carry out boostrap analyses) while optimising the models. It has been desinged to allow calculation of the likelihood decay supports for each internal branch of the resulting tree.
+Machete takes as input a nexus formatted aligned DNA or Amino Acid sequences and uses PAUP* to automatically calculate maximum likelihood trees (and/or carry out boostrap analyses) while optimising the models. It has been desinged to allow calculation of the likelihood decay supports for each internal branch of the resulting tree.
 
-Machete controls and interacts with Paup using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
+Machete controls and interacts with PAUP* using a pipe, and not using a predefined script. This allows dataset-specific optimisations to be carried out (as a user would).
 
 
 
@@ -148,25 +148,25 @@ In more detail:
 
 ### -f 
 
-To use machete, it is necessary to pass as input a nexus formatted alignment file using the option '-f':
+>To use machete, it is necessary to pass as input a nexus formatted alignment file using the option '-f':
 
 ```
 machete -f NEXUSFILE
 ```
 
-An example file `Primate.nex` has been provided. To run the reverse constraint analysis for this file use the command:
+>An example file `Primate.nex` has been provided. To run the reverse constraint analysis for this file use the command:
 
 ```
 machete -f Primate.nex
 ```
-You can provide a pre-calculated phylogeny to machete by adding a "trees" block to the end of the nexus file.
-If this is provided, machete will not try to build the optimum tree, but use the provided tree instead.
-If you wish to over-ride this functionality, use the -b option (see below).
+>You can provide a pre-calculated phylogeny to machete by adding a "trees" block to the end of the nexus file.
+>If this is provided, machete will not try to build the optimum tree, but use the provided tree instead.
+>If you wish to over-ride this functionality, use the -b option (see below).
 
 
 ### -c
 
--c which tells Machete to print all the commands sent to Paup to the standard error. This can then be redirected to a seperate file using the following syntax:
+>-c which tells Machete to print all the commands sent to Paup to the standard error. This can then be redirected to a seperate file using the following syntax:
  
  ```
  machete -f Primate.nex -c 2> paupcommands.txt
@@ -174,36 +174,36 @@ If you wish to over-ride this functionality, use the -b option (see below).
  
 ### -t
  
-  -t preserves temporary files
+>-t preserves temporary files
  
 ### -b
  
-  -b forces machete to build an optimum tree when a tree has been provided in the nexus file
+>-b forces machete to build an optimum tree when a tree has been provided in the nexus file
  
 ### -h
  
-  -h prints a description of the usage of machete.
+>-h prints a description of the usage of machete.
  
 ### -s
  
-  -s [constraint number] specifies the constraint at which to start the analysis
+>-s [constraint number] specifies the constraint at which to start the analysis
  
 ### -e
  
-  -e [constraint number] specifies the constraint at which to end the analysis
+>-e [constraint number] specifies the constraint at which to end the analysis
  
 ### -l
  
-  -l lists constraints (and do not carry out reverse constraints analysis)
+>-l lists constraints (and do not carry out reverse constraints analysis)
   
 ### -n
 
-  -n tells machete to NOT carry out the reverse constraints analysis. This is useful if you want to use machete to just build ML trees or carry out ML boostrap analyses in PAUP*
+>-n tells machete to NOT carry out the reverse constraints analysis. This is useful if you want to use machete to just build ML trees or carry out ML boostrap analyses in PAUP*
   
 ### -r
  
-  -r [INTEGER] turns on the bootstrapping algorithm carrying out the specified number of repetitions (default = 0)
-  NOTE: Only the ML tree is used to define the constraints for the likelihood decay analyses, the boostraps are outputted into a sperate file for information only.
+>-r [INTEGER] turns on the bootstrapping algorithm carrying out the specified number of repetitions (default = 0)
+>NOTE: Only the ML tree is used to define the constraints for the likelihood decay analyses, the boostraps are outputted into a sperate file for information only.
   
  
  
@@ -211,7 +211,7 @@ If you wish to over-ride this functionality, use the -b option (see below).
  
 ## Outputs
 
-Machete produces three standard output files:
+Machete produces four standard output files:
 
 ```
 [NEXUSFILE].bestMLtree.tre
@@ -220,27 +220,27 @@ Machete produces three standard output files:
 [NEXUSFILE].constraint.tre
 ```
 
-*Where* `[NEXUSFILE]` is the name of the alignment input file.
+>*Where* `[NEXUSFILE]` is the name of the alignment input file.
 
-`[NEXUSFILE].bestMLtree.tre` will contain the best ML tree calculated (or the one provided) with branchlengths optimised based onthe the model optimisation carried out.
+>`[NEXUSFILE].bestMLtree.tre` will contain the best ML tree calculated (or the one provided) with branchlengths optimised based onthe the model optimisation carried out.
 
-`[NEXUSFILE].likelihood.decays.tre` will again contain the phylogeny either calculated by PAUP or provided by the user with internal branch labels containg the results of the likelihood decay analysis in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
+>`[NEXUSFILE].likelihood.decays.tre` will again contain the phylogeny either calculated by PAUP or provided by the user with internal branch labels containg the results of the likelihood decay analysis in the following format: `2/15.19/41.0945/25.9042/0.613363` where:
 
->2 = the internal branch ID (and constraint number)
+>>2 = the internal branch ID (and constraint number)
   
->15.19 = The difference in the -lnL between the unconstrained tree and constrained tree for this branch.
+>>15.19 = The difference in the -lnL between the unconstrained tree and constrained tree for this branch.
   
->41.0945 = The absolute value of the sum of likelihood differences supporting the unconstrained tree at this branch.
+>>41.0945 = The absolute value of the sum of likelihood differences supporting the unconstrained tree at this branch.
   
->25.9042 = The absolute value of the sum of the likelihood differences supporting the constrained tree at this branch.
+>>25.9042 = The absolute value of the sum of the likelihood differences supporting the constrained tree at this branch.
   
->0.613363 = Proportion of the absolute likelihood differences supporting the unconstrained tree {calculated in this case as: (41.0945)/(41.0945+25.9042)}
+>>0.613363 = Proportion of the absolute likelihood differences supporting the unconstrained tree {calculated in this case as: (41.0945)/(41.0945+25.9042)}
 
-These supports can be viewed on the tree using a phylogeny viewer such as [figtree](http://tree.bio.ed.ac.uk/software/figtree/).
+>These supports can be viewed on the tree using a phylogeny viewer such as [figtree](http://tree.bio.ed.ac.uk/software/figtree/).
 
-`[NEXUSFILE].sitelike.txt` contains all the sitelikelihoods calcuated for the unconstrained tree and for each of the constrained trees (labelled by internal branch ID).
+>`[NEXUSFILE].sitelike.txt` contains all the sitelikelihoods calcuated for the unconstrained tree and for each of the constrained trees (labelled by internal branch ID).
 
-`[NEXUSFILE].constraint.tre` contains all the best constrained trees for each internal branch in phylip format (labelled by internal branch ID).
+>`[NEXUSFILE].constraint.tre` contains all the best constrained trees for each internal branch in phylip format (labelled by internal branch ID).
 
 Two other output files are created if the "-b" bootstrapping option is selected:
 
@@ -249,8 +249,9 @@ Two other output files are created if the "-b" bootstrapping option is selected:
 [NEXUSFILE].boottrees.tre
 ```
 
-`[NEXUSFILE].contree.tre` will contain the results of a majority-rule consensus (with minor compatible minor components) of the boostrapped trees in nexus format.
-`[NEXUSFILE].boottrees.tre` will contain all the bootstrapped trees in nexus format
+>`[NEXUSFILE].contree.tre` will contain the results of a majority-rule consensus (with minor compatible minor components) of the boostrapped trees in nexus format.
+
+>`[NEXUSFILE].boottrees.tre` will contain all the bootstrapped trees in nexus format
 
 
 
