@@ -46,7 +46,7 @@ void read_sitelike_file(int component);
 FILE *paup_pipe, *logfile, *treefile, *outputtree, *nexusfile, *guidetreefile;
 
 int bytes_read, pid,  file_length=0, checks=0, checkcount=0, total_constraints=0, response=0, datatype=0, constart=0, conend=-1, bootreps=0; /*dataypes 0=DNA, 1=Protein */
-int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0, buildflag=FALSE, listcons=FALSE, norevcon=FALSE;
+int nbytes = 100, numtranslatedtaxa = 0, num_taxa = 1000, translated = FALSE, alignment_length =0, excludedchars=0, number_taxa =0, print_command=FALSE, gtflag=FALSE, num_trees=0, buildflag=FALSE, listcons=FALSE, norevcon=FALSE;
 char *my_string, pid_string[1000], c, *newtree, *notranslate_newtree, *besttree, **resultingtrees = NULL, *guidetree = NULL,  *infile=NULL, *gtfilename=NULL ;
 char logfilename[1000], sys[1000], result[100000], output[100000], command[10000], *treefilename, ***names;
 double likelihood =0, new_likelihood=0, meanRand_likelihood=0, **site_likelihoods = NULL;
@@ -77,6 +77,7 @@ int main (int argc, char *argv[])
   if(argc < 2)
   {
     printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cthln] [-s INTEGER] [-e INTEGER] [-r INTEGER]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\t-s <constraint number> specifies the constraint to start at\n\t-e <constraint number> specific the constraint to end at\n\t-l list constraints (and do not carry out reverse constraints analysis)\n\t-n tells machete NOT to carry out the reverse constraint analysis (Just build the best tree)\n\t-r tells machete how many boostrap replicates to carry out (by default = 0)\n\n" );
+    printf("\tCreated by Chris Creevey e:chris.creevey@gmail.com t:@hairy_llama\n\n\n");
     exit(1);
   }
   while ((c = getopt(argc, argv, "f:chtbs:e:lnr:")) != -1)
@@ -92,6 +93,8 @@ int main (int argc, char *argv[])
         break;
       case 'h':
         printf("\n\nMachete: Likelihood reverse constraint analysis using PAUP\n\n Usage: \"machete -f <nexus file> -[cthln] [-s INTEGER] [-e INTEGER] [-r INTEGER]\"\n\n\tWhere: <nexus file> is a nexus formatted alignment file of DNA sequences\n\t-c commands sent to Paup to be also printed to standard error\n\t-t preserves temporary files\n\t-h prints this message\n\t-b force build optimum tree (when a tree has been provided in the nexus file)\n\t-s <constraint number> specifies the constraint to start at\n\t-e <constraint number> specific the constraint to end at\n\t-l list constraints (and do not carry out reverse constraints analysis)\n\t-n tells machete NOT to carry out the reverse constraint analysis (Just build the best tree)\n\t-r tells machete how many boostrap replicates to carry out (by default = 0)\n\n" );
+        printf("\tCreated by Chris Creevey e:chris.creevey@gmail.com t:@hairy_llama\n\n\n");
+
         exit(1);
         break;
       case 't':
@@ -203,7 +206,16 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
     number_taxa = atoi(token);
     for(i=0; i<2; i++) token = strtok(NULL, " ");
     alignment_length = atoi(token);
-    printf("\n\tNumber of taxa = %d Number of Characters = %d\n\n", number_taxa, alignment_length);
+    printf("\n\tNumber of taxa = %d Number of Characters = %d\n", number_taxa, alignment_length);
+
+    /* get number of characters excluded that were not parsimony infomrative */
+    response = check_for_output("characters excluded");
+    token = strtok(output, " ");  /* get past the inital spaces on this line */
+    /* get the number of excluded characters */
+    excludedchars=atoi(token);
+    printf("\tNumber of parsimony uninformative characters = %d\n", excludedchars);
+    printf("\tNumber of Characters remaining in alignment = %d\n\n", alignment_length-excludedchars);
+
 
     /* Check to see if the nexus file constained a tree */
     if(buildflag == FALSE)
@@ -219,7 +231,7 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
 
     /* generate arrays to hold the sites likelihood later */
     site_likelihoods = malloc((number_taxa-2)*sizeof(double *));
-    for(i=0; i<(number_taxa-2); i++) site_likelihoods[i]=malloc((alignment_length)*sizeof(double));
+    for(i=0; i<(number_taxa-2); i++) site_likelihoods[i]=malloc((alignment_length-excludedchars)*sizeof(double));
 
 
     if(num_trees == 0)
@@ -290,7 +302,7 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
           print_time(difftime(interval3, interval2));
      
 
-          sprintf(command, "%s.labelledtree.tre", infile);
+          sprintf(command, "%s.likelihood.decay.tre", infile);
           outputtree = fopen(command, "w");
           fprintf(outputtree, "%s [%g]\n", newtree, likelihood);
           fclose (outputtree);
@@ -302,17 +314,17 @@ if((nexusfile = fopen(infile, "r")) == '\0')   /* check to see if the file is th
 
       /*unroottree(string); */
 
-      printf("\tFinished revered constraints analysis.");
+      printf("\tFinished revered constraints analysis.\n");
       print_time(difftime(time(NULL), interval2));
 
       
       sprintf(str, "%s.sitelike.txt", infile);
       file=fopen(str, "w");
       fprintf(file, "Best_tree\t");
-      for(i=0; i<(number_taxa-3); i++) fprintf(file, "constrint_tree %d\t", i);
+      for(i=0; i<(number_taxa-3); i++) fprintf(file, "constraint_tree %d\t", i);
       fprintf(file, "\n");
 
-      for(j=0; j<alignment_length; j++)
+      for(j=0; j<alignment_length-excludedchars; j++)
         { 
         for(i=0; i<(number_taxa-2); i++)
           {
@@ -695,9 +707,9 @@ double re_estimate_parameters (double likelihood)
 
     sprintf(comm, "savetrees file=paup_%d.tre brLens=yes;", pid);
     send_command(comm);
-    sprintf(comm, "savetrees file=paup_%d.altnexus.tre brLens=yes format=altnexus;", pid);
+    sprintf(comm, "savetrees file=%s.bestMLtree.tre brLens=yes format=altnexus;", infile);
     send_command(comm); 
-    printf("\nBest tree found after %d iterations with -ln L %g saved to file paup_%d.tre;\n\n", iteration-1,  new_likelihood, pid); 
+    printf("\nBest tree found after %d iterations with -ln L %g saved to file %s.bestMLtree.tre;\n\n", iteration-1,  new_likelihood, infile); 
 
     free(comm);
     return(new_likelihood);
@@ -737,7 +749,7 @@ double re_estimate_parameters (double likelihood)
 
     printf("Beginning ML Boostrap analysis with %d replicates\n", reps);
 
-    sprintf(comm, "boot nrep=%d treefile=%s.boottrees.tre format=altnexus; exe %s.boottrees.tre; contree /LE50=yes majRule=yes strict=no treefile=%s.contree.tre;",reps, infile, infile, infile);
+    sprintf(comm, "boot nrep=%d treefile=%s.boottrees.tre format=altnexus / enforce=no; exe %s.boottrees.tre; contree /LE50=yes majRule=yes strict=no treefile=%s.contree.tre;",reps, infile, infile, infile);
     send_command(comm );  
 
     checkcount=0; while((response = check_for_output("Consensus tree(s) written to treefile:")) != 1 && response != 3 )  { if(checkcount == 0) { printf("\n\tWaiting for PAUP ..."); fflush(stdout); checkcount++;} sleep(5); printf("."); fflush(stdout);}
@@ -746,7 +758,8 @@ double re_estimate_parameters (double likelihood)
       fprintf(stderr, "Error signal detected from Paup. Now quitting. Please check the file \"Paup_output_%d.txt\" to determine the error message\n", pid);
       exit(0);
       }
-    printf("\n\tResulting boostrapped phylogeny written to file %s.boottrees.tre\n", infile);
+    printf("\n\tResulting boostrapped phylogeny written to file: %s.boottrees.tre\n", infile);
+    printf("\tMajority-Rule consensus of boostrapped trees (with compatible minor components) written to file: %s.contree.tre\n", infile);
 
     free(comm);
     } 
@@ -1298,7 +1311,7 @@ int test_reverse_constraints(char * translated_tree)
       }
       total_constraints--;
       total_constraints--;
-    if(constart < 1) constart = 1;
+    if(constart < 1) constart = 0;
     if(constart > total_constraints) constart = total_constraints;
     if(conend == -1) conend = total_constraints;
     if(conend > total_constraints) conend = total_constraints;
@@ -1364,7 +1377,7 @@ int test_reverse_constraints(char * translated_tree)
              /* new_likelihood = re_estimate_constraint_parameters (new_likelihood, constraint_num); */ /* It is likely unnecessary to re-estimate all the parameters for the constraint trees when everything has been optimised already for the "best" tree */
               numsites_supporting_constraint =0; numsites_supporting_neither=0;
               sumlikesuppbest =0; sumlikesuppconstr=0;
-             for(x=0; x<alignment_length; x++) 
+             for(x=0; x<alignment_length-excludedchars; x++) 
               {  
               if((site_likelihoods[0][x] - site_likelihoods[constraint_num+1][x]) > 0 )
                 {
@@ -1539,7 +1552,10 @@ void read_sitelike_file(int component) /* this will be passed "-1" to indicate t
 
   FILE *sitelike_file = NULL;
   char filename[10000], str1[100], str2[100], str3[100], str4[100], c;
-  int line=0, part=component+1, numlineends=0;
+  int line=0, part=0, numlineends=0;
+
+  if(component == -1) part =0;
+  else part=component+1;
 
   sprintf(filename, "site_like_scores_%d.txt", pid);
   sitelike_file = fopen(filename, "r");
