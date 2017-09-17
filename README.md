@@ -37,23 +37,32 @@ To address this, Machete implements a likelihood decay support value. Based on t
 
 
 ## Quick Start
+### Carry out full analysis
+Includes search for best tree, likelihood decay analysis and boostrapping analysis.
+```
+machete -f alignment.nexus -b -r 100
+```
 
-### To generate a maximum likeihood tree (DNA or Amino Acid) in PAUP* (while optimising for best models etc) 
+### To only generate a maximum likeihood tree (DNA or Amino Acid) in PAUP*  
+No likelihood decay analysis is carried out.
 ```
 machete -f alignment.nexus -n
 ```
 
-### To generate a maximum likelihood tree AND carry out a bootstrap analysis in PAUP* (while optimising for best models etc)
+### To generate a maximum likelihood tree AND carry out a bootstrap analysis in PAUP* 
+No likelihood decay analysis is carried out
 ```
 machete -f alignment.nexus -n -r 100
 ```
 
-### To calculate likelihood decay for best tree (given only an alignment) - will also calculate ML tree
+### To calculate likelihood decay for best tree 
+Presumes given only an alignment - will also calculate ML tree
 ```
 machete -f alignment.nexus 
 ```
 
-### To calculate likelihood decay for Given tree - will optimise models to tree provided.
+### To calculate likelihood decay for a given tree 
+Tree must be provided as a "treeblock" in the nexus file. Will optimise models to tree provided.
 ```
 machete -f alignment_with_treeblock.nexus
 ```
