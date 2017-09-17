@@ -215,7 +215,7 @@ Machete produces three standard output files:
 
 ```
 [NEXUSFILE].bestMLtree.tre
-[NEXUSFILE].likelihood.decays.tre
+[NEXUSFILE].likelihood.decay.tre
 [NEXUSFILE].sitelike.txt
 [NEXUSFILE].constraint.tre
 ```
