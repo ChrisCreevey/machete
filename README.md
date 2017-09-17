@@ -67,15 +67,21 @@ See the options description below for more details.
 Machete carries out the following steps:
 
 1. Identifies the phylogeny best supported by the inputted alignment by:
+  * Exclude parsimony uninformative sites.
   * Carrying out a heuristic search of tree space (unless a tree is provided - see below).
   * Optimising model parameters using best tree.
-  * Repeat previous steps until likelihoods stops improving.
+  * Search for best tree given optimised model
+  * Repeat previous two steps until likelihoods stops improving.
 
 2. Define all constraints based on each of the internal branches of the best tree.
 
 3. For each constraint, carry out a search for the the best tree that does not contain that branch.
 
 5. Calculate the likelihood decay support for each internal branch and output the best phylogeny with the support values labelled on each branch
+
+6. If requested, carry out a standard boostrap analysis on the imput data.
+
+Certain steps can be omitted using options provided to machete.
 
 
 
