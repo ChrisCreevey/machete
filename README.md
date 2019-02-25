@@ -1,5 +1,5 @@
 # Machete
-Machete: Automated Maximum likelihood phlyogeny construction with PAUP* and calculation of likelihood decay indices.
+Machete: Automated Likelihood decay indices and Maximum likelihood phlyogeny construction with PAUP*
 
 ## Sections
 
